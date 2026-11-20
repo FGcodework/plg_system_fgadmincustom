@@ -127,7 +127,7 @@ foreach ($names as $name => $field) {
     }
 }
 
-$ok((string) $xml->version === '1.0.4', 'version 1.0.4');
+$ok((string) $xml->version === '1.0.5', 'version 1.0.5');
 $ok((string) $xml->scriptfile === 'script.php' && is_file($root . '/script.php'), 'script file present');
 
 // The recovery link is shown by default (the old login plugin hid it); migration keeps the old behaviour.

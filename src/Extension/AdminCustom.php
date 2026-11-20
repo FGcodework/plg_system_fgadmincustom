@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.4
+ * @version     1.0.5
  * @license     GNU General Public License version 2 or later
  *
  * Visual customization of the Joomla administrator (Atum template, Joomla 5/6)
@@ -46,7 +46,7 @@ use Joomla\Event\SubscriberInterface;
 final class AdminCustom extends CMSPlugin implements SubscriberInterface
 {
     /** Shown in the generated CSS comment. */
-    public const VERSION = '1.0.4';
+    public const VERSION = '1.0.5';
 
     /** Value of the "schema" marker in the settings export. */
     public const EXPORT_SCHEMA = 'fgadmincustom/1';
@@ -108,7 +108,15 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
             return null;
         }
 
-        // Atum itself or a child template of Atum.
+        return $this->adminTemplate($app) !== null ? self::CONTEXT_ADMIN : null;
+    }
+
+    /**
+     * Name of the administrator template when it is Atum or a child template of
+     * Atum (what this plugin is written for), otherwise null.
+     */
+    private function adminTemplate(CMSApplicationInterface $app): ?string
+    {
         try {
             $template = $app->getTemplate(true);
             $names    = [(string) ($template->template ?? ''), (string) ($template->parent ?? '')];
@@ -116,7 +124,7 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
             return null;
         }
 
-        return \in_array('atum', $names, true) ? self::CONTEXT_ADMIN : null;
+        return \in_array('atum', $names, true) ? $names[0] : null;
     }
 
     /**
@@ -405,6 +413,12 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
 
         // The plugins this one replaces would style everything a second time.
         $this->warnReplacedPluginsEnabled($app);
+
+        // Written for Atum: on another administrator template the settings of the logged-in
+        // administrator do nothing, and the plugin stays silent - so say it here.
+        if ($this->adminTemplate($app) === null) {
+            $app->enqueueMessage(Text::_('PLG_SYSTEM_FGADMINCUSTOM_NOT_ATUM'), 'notice');
+        }
 
         $paramsData = $isDataArray ? ($data['params'] ?? null) : ($data->params ?? null);
         $params     = ImportExport::paramsToArray($paramsData);

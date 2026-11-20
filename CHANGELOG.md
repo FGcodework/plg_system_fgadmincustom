@@ -1,5 +1,9 @@
 # Changelog - plg_system_fgadmincustom
 
+## 1.0.5 (2026-11-20)
+- NEW: the plugin's settings page shows a notice when the administrator template in use is not Atum (or a child of Atum). The plugin only works with Atum and used to stay silent on any other template. New string `NOT_ATUM`.
+- README: how Custom CSS/JavaScript are emitted (Joomla's asset manager, so CSP nonces apply), that they are off while empty, that changes appear in Joomla's User Actions Log, and how to scope your own CSS.
+
 ## 1.0.4 (2026-11-20)
 - FIX: the automatic text color now takes the alpha byte of `#rrggbbaa` colors into account (the color is laid over white first, instead of its alpha being ignored). A faint translucent background no longer gets light text. New `ColorHelper::alpha()` and `flatten()`.
 - FIX: media URLs lose only the `#joomlaImage://...` fragment of the Joomla media field; any other fragment (the `#icon` of an SVG sprite, for example) is kept. Values with quotes, backslashes, angle brackets or control characters are refused before they can reach `url("...")` or `src="..."`.

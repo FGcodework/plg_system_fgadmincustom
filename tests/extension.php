@@ -241,6 +241,16 @@ $plugin($app, [])->prepareAdminForm($form($data));
 $eq($app->messages, [['warning', 'PLG_SYSTEM_FGADMINCUSTOM_REPLACED_PLUGIN_ENABLED|System - FG Admin Login Customizer']], 'form: warns about the enabled old login plugin');
 PluginHelper::$enabled = [];
 
+// another administrator template: the form says the plugin does nothing there
+$app  = new FakeApp('administrator', false, ['option' => 'com_plugins'], 'othertemplate');
+$data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => []];
+$plugin($app, [])->prepareAdminForm($form($data));
+$eq($app->messages, [['notice', 'PLG_SYSTEM_FGADMINCUSTOM_NOT_ATUM']], 'form: notice when the administrator template is not Atum');
+$app  = $formApp();
+$data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => []];
+$plugin($app, [])->prepareAdminForm($form($data));
+$eq($app->messages, [], 'form: no notice on Atum');
+
 // import of this plugin's own JSON (custom JS is never taken)
 $app  = $formApp();
 $data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => ['import_json' => json_encode([

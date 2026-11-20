@@ -105,6 +105,15 @@ Nothing is saved or changed by the switch.
 
 ## A note on Custom CSS and JavaScript
 
+Both fields are empty by default, which is the "off" position - there is no
+separate switch. Anything in them is added through Joomla's own asset manager as an
+inline `<style>` / `<script>`, so a Content Security Policy configured with Joomla's
+HTTP Headers plugin applies to it and Joomla's nonce is added automatically. Who
+changed the plugin and when is recorded by Joomla's User Actions Log (plugins are
+logged by default). The login page rules are scoped with `.view-login` and
+`body.com_login`; write your own CSS the same way so that it cannot leak into the
+logged-in administrator.
+
 The **Custom JavaScript** field runs on the administrator login page - the
 page that carries the username and password inputs. Treat it like editing a
 template file: only paste code you wrote or have read and understood.

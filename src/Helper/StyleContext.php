@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.4
+ * @version     1.0.5
  * @license     GNU General Public License version 2 or later
  *
  * Turns the stored settings into the plain-key Registry one context's CSS
