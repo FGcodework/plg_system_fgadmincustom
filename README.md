@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.webp" alt="plg_system_fgadmincustom logo" width="128" height="128">
+</p>
+
 <h1 align="center">FG Admin Customizer plugin for Joomla</h1>
 
 <p align="center">
