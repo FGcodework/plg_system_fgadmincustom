@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.0
+ * @version     1.0.1
  * @license     GNU General Public License version 2 or later
  *
  * Validates settings values coming from an imported JSON, key by key.
@@ -126,22 +126,14 @@ final class SettingsSanitizer
     }
 
     /**
-     * Footer HTML is printed raw on the login page, so an import must not
-     * carry scripts, frames, inline event handlers or javascript: links.
+     * Footer HTML is printed raw on the login page. It is parsed and rebuilt
+     * from an allowlist of elements, attributes and URL schemes (see
+     * FooterSanitizer), so an import cannot carry script, handlers, scripting
+     * URLs, frames or markup that closes the elements around it.
      */
     private static function cleanFooter(string $text): ?string
     {
-        if (\strlen($text) > 5000) {
-            return null;
-        }
-
-        if (preg_match('#<\s*/?\s*(script|iframe|object|embed|style|link|meta|base|form)\b#i', $text) === 1
-            || preg_match('#\bon[a-z]+\s*=#i', $text) === 1
-            || preg_match('#(javascript|vbscript)\s*:#i', $text) === 1) {
-            return null;
-        }
-
-        return $text;
+        return FooterSanitizer::sanitize($text);
     }
 
     /**

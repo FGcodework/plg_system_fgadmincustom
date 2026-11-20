@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.0
+ * @version     1.0.1
  * @license     GNU General Public License version 2 or later
  *
  * Visual customization of the Joomla administrator (Atum template, Joomla 5/6)
@@ -45,7 +45,7 @@ use Joomla\Event\SubscriberInterface;
 final class AdminCustom extends CMSPlugin implements SubscriberInterface
 {
     /** Shown in the generated CSS comment. */
-    public const VERSION = '1.0.0';
+    public const VERSION = '1.0.1';
 
     /** Value of the "schema" marker in the settings export. */
     public const EXPORT_SCHEMA = 'fgadmincustom/1';

@@ -127,7 +127,7 @@ foreach ($names as $name => $field) {
     }
 }
 
-$ok((string) $xml->version === '1.0.0', 'version 1.0.0');
+$ok((string) $xml->version === '1.0.1', 'version 1.0.1');
 $ok((string) $xml->scriptfile === 'script.php' && is_file($root . '/script.php'), 'script file present');
 
 // Defaults equal the old plugins' defaults.

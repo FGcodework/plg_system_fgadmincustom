@@ -10,7 +10,7 @@ define('_JEXEC', 1);
 
 require __DIR__ . '/registry_stub.php';
 
-foreach (['Helper/ColorHelper', 'Helper/MediaUrl', 'Helper/Schema', 'Helper/StyleContext', 'Helper/LegacyMapper', 'Helper/SettingsSanitizer',
+foreach (['Helper/ColorHelper', 'Helper/MediaUrl', 'Helper/Schema', 'Helper/StyleContext', 'Helper/LegacyMapper', 'Helper/FooterSanitizer', 'Helper/SettingsSanitizer',
     'Helper/ImportExport', 'Login/BodyModifier', 'Login/ThemePresets', 'Login/CssBuilder', 'Admin/CssBuilder', 'Admin/LogoReplacer', 'Admin/MenuScript'] as $f) {
     require __DIR__ . '/../src/' . $f . '.php';
 }
@@ -19,6 +19,7 @@ use FG\Plugin\System\AdminCustom\Admin\CssBuilder as AdminCss;
 use FG\Plugin\System\AdminCustom\Admin\LogoReplacer as L;
 use FG\Plugin\System\AdminCustom\Admin\MenuScript;
 use FG\Plugin\System\AdminCustom\Helper\ColorHelper as C;
+use FG\Plugin\System\AdminCustom\Helper\FooterSanitizer as FS;
 use FG\Plugin\System\AdminCustom\Helper\ImportExport as IE;
 use FG\Plugin\System\AdminCustom\Helper\LegacyMapper as LM;
 use FG\Plugin\System\AdminCustom\Helper\MediaUrl as M;
@@ -94,6 +95,66 @@ $eq(S::sanitize(['login_custom_css' => 'a{}</style><script>x</script>'])['reject
 $eq(S::sanitize(['ctrl_radius' => '-3'])['rejected'], ['ctrl_radius'], 'san negative');
 $eq(S::sanitize(['brand_color' => ['x']])['rejected'], ['brand_color'], 'san array');
 $eq(S::sanitize(['login_brand_color' => ''])['values'], ['login_brand_color' => ''], 'san empty override');
+
+// ------------------------------------------------------------- FooterSanitizer
+foreach ([
+    'entity hex'          => '<a href="java&#x73;cript:alert(1)">x</a>',
+    'entity decimal'      => '<a href="&#106;avascript:alert(1)">x</a>',
+    'named tab entity'    => '<a href="java&Tab;script:alert(1)">x</a>',
+    'raw tab'             => "<a href=\"java\tscript:alert(1)\">x</a>",
+    'raw newline'         => "<a href=\"java\nscript:alert(1)\">x</a>",
+    'leading control'     => "<a href=\"\x01javascript:alert(1)\">x</a>",
+    'colon entity'        => '<a href="javascript&colon;alert(1)">x</a>',
+    'upper case'          => '<A HREF="JAVASCRIPT:alert(1)">x</A>',
+    'vbscript'            => '<a href="vbscript:msgbox(1)">x</a>',
+    'data url'            => '<a href="data:text/html,x">x</a>',
+    'data image'          => '<img src="data:image/svg+xml,x" alt="">',
+    'file url'            => '<a href="file:///etc/passwd">x</a>',
+    'backslash host'      => '<a href="\\\\evil.example">x</a>',
+    'inline style'        => '<div style="position:fixed;inset:0;background:#fff">fake login</div>',
+    'event handler'       => '<b onmouseover="alert(1)">x</b>',
+    'handler on img'      => '<img src="/a.png" onerror="alert(1)">',
+    'id attribute'        => '<b id="x">x</b>',
+    'script'              => '<script>alert(1)</script>',
+    'svg'                 => '<svg onload="alert(1)"></svg>',
+    'math mXSS'           => '<math><mtext><table><mglyph><style><img src=x onerror=alert(1)>',
+    'iframe'              => '<iframe src="/x"></iframe>',
+    'form'                => '<form action="/x"><button>x</button></form>',
+    'stray closer'        => 'x</div><div class="evil">y',
+    'srcset'              => '<img src="/a.png" srcset="javascript:alert(1)">',
+    'too long'            => str_repeat('a', 5001),
+    'invalid utf-8'       => "x\xff",
+    'nul byte'            => "x\0y",
+] as $name => $html) {
+    $eq(FS::sanitize($html), null, "footer rejected: $name");
+}
+
+foreach ([
+    'Made by <a href="https://fgcodework.github.io" target="_blank" rel="noopener">FG</a>' => 'Made by <a href="https://fgcodework.github.io" target="_blank" rel="noopener">FG</a>',
+    '<a href="https://x.sk" target="_blank">x</a>'                                            => '<a href="https://x.sk" target="_blank" rel="noopener">x</a>',
+    '<a href="https://x.sk" target="_blank" rel="nofollow">x</a>'                             => '<a href="https://x.sk" target="_blank" rel="nofollow noopener">x</a>',
+    '<a href="/kontakt?a=1&amp;b=2#top">k</a>'                                                => '<a href="/kontakt?a=1&amp;b=2#top">k</a>',
+    '<a href="mailto:info@example.sk">mail</a> | <a href="tel:+421900000000">tel</a>'          => '<a href="mailto:info@example.sk">mail</a> | <a href="tel:+421900000000">tel</a>',
+    '<a href="//cdn.example.sk/x">x</a>'                                                      => '<a href="//cdn.example.sk/x">x</a>',
+    '&copy; 2026 <strong>FG</strong><br><small class="muted">All rights reserved</small>'     => '© 2026 <strong>FG</strong><br><small class="muted">All rights reserved</small>',
+    '<p>One</p><p>Two &amp; three &lt;b&gt;</p>'                                              => '<p>One</p><p>Two &amp; three &lt;b&gt;</p>',
+    '<img src="/images/f.png" alt="FG" width="24" height="24"> FG'                            => '<img src="/images/f.png" alt="FG" width="24" height="24"> FG',
+    '<b>unclosed <i>tags'                                                                     => '<b>unclosed <i>tags</i></b>',
+    'a <!-- comment --> b'                                                                    => 'a  b',
+    '</form><a href="/x">x</a>'                                                              => '<a href="/x">x</a>',
+    ''                                                                                        => '',
+    'Žilinská pôrodnica ľščťžýáíé'                                                            => 'Žilinská pôrodnica ľščťžýáíé',
+] as $in => $expected) {
+    $out = FS::sanitize((string) $in);
+    $eq($out, $expected, 'footer kept/normalised: ' . substr((string) $in, 0, 40));
+    $eq($out === null ? null : FS::sanitize($out), $out, 'footer sanitizing twice changes nothing: ' . substr((string) $in, 0, 30));
+}
+
+// Through the settings sanitizer: stored value is the rebuilt one; the dangerous ones are skipped and reported.
+$r = S::sanitize(['login_footer_text' => '<a href="https://x.sk" target="_blank">x</a>']);
+$eq($r['values']['login_footer_text'] ?? null, '<a href="https://x.sk" target="_blank" rel="noopener">x</a>', 'settings: footer stored in its rebuilt form');
+$r = S::sanitize(['login_footer_text' => '<a href="java&#x73;cript:alert(1)">Test</a>', 'brand_color' => '#112233']);
+$eq([$r['rejected'], $r['values']], [['login_footer_text'], ['brand_color' => '#112233']], 'settings: entity-encoded javascript: link is skipped, the rest still imported');
 
 // Every theme preset (written by the plugin itself) passes the sanitizer once prefixed.
 foreach (P::all() as $name => $preset) {

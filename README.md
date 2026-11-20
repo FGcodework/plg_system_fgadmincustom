@@ -26,7 +26,7 @@ independent of, FG Admin Login Customizer and FG Admin Page Customizer.
 ## Features
 
 - **Brand** (shared): brand color, corner radius of fields/buttons and of cards, shadow presets. The login page inherits them; each value can be overridden there, or the inheritance switched off
-- **Login page**: logo (with optional dark-mode logo, size and fit), background (none / color / gradient / image with overlay), card background/text/radius/shadow, button and link colors, header bar, optional footer text (HTML allowed), hiding the sidebar, template branding, language switcher and the "Forgot your login details?" link
+- **Login page**: logo (with optional dark-mode logo, size and fit), background (none / color / gradient / image with overlay), card background/text/radius/shadow, button and link colors, header bar, optional footer text (a safe subset of HTML), hiding the sidebar, template branding, language switcher and the "Forgot your login details?" link
 - **Automatic contrast**: leave a text color empty and it is computed from the background (WCAG relative luminance)
 - **Six built-in login color presets** (Default / Dark / Corporate Blue / Green / Orange / Minimal)
 - **Logged-in administrator**: header color, sidebar color (or "follow the header"), page background, expanded and collapsed header logo, optional "open the first menu entry" behavior
@@ -79,6 +79,10 @@ one. If you do, nothing breaks (both add their styles, which look the same after
 | **Export / Import** | Read-only JSON export; paste JSON + Save to import. Custom JavaScript is never imported. |
 
 Every color field left empty falls back to the Atum template's own styling.
+
+## Footer text
+
+The login footer accepts simple HTML: links (`http`, `https`, `mailto`, `tel` or relative), `strong`, `em`, `b`, `i`, `u`, `small`, `span`, `div`, `p`, `br`, `hr`, lists, `sub`/`sup`, `abbr` and `img`, with the attributes `class`, `title` and the link/image attributes. When settings are imported, anything else (scripts, inline `style`, event handlers, frames, forms ...) makes the footer invalid and it is skipped with a warning; style it with a `class` and the Custom CSS field instead. Links opened in a new tab automatically get `rel="noopener"`.
 
 ## Recovery switch
 

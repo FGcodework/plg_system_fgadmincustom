@@ -14,7 +14,7 @@ require __DIR__ . '/registry_stub.php';
 require __DIR__ . '/joomla_stub.php';
 require __DIR__ . '/app_stub.php';
 
-foreach (['Helper/ColorHelper', 'Helper/MediaUrl', 'Helper/Schema', 'Helper/StyleContext', 'Helper/LegacyMapper', 'Helper/SettingsSanitizer', 'Helper/ImportExport',
+foreach (['Helper/ColorHelper', 'Helper/MediaUrl', 'Helper/Schema', 'Helper/StyleContext', 'Helper/LegacyMapper', 'Helper/FooterSanitizer', 'Helper/SettingsSanitizer', 'Helper/ImportExport',
     'Login/BodyModifier', 'Login/ThemePresets', 'Login/CssBuilder', 'Admin/CssBuilder', 'Admin/LogoReplacer', 'Admin/MenuScript', 'Extension/AdminCustom'] as $f) {
     require __DIR__ . '/../src/' . $f . '.php';
 }

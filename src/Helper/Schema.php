@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.0
+ * @version     1.0.1
  * @license     GNU General Public License version 2 or later
  *
  * The one place that knows how the settings of this plugin are named.
