@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.3
+ * @version     1.0.4
  * @license     GNU General Public License version 2 or later
  *
  * Small admin-side script: a click on a component's parent menu item

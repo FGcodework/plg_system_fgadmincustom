@@ -1,5 +1,12 @@
 # Changelog - plg_system_fgadmincustom
 
+## 1.0.4 (2026-11-20)
+- FIX: the automatic text color now takes the alpha byte of `#rrggbbaa` colors into account (the color is laid over white first, instead of its alpha being ignored). A faint translucent background no longer gets light text. New `ColorHelper::alpha()` and `flatten()`.
+- FIX: media URLs lose only the `#joomlaImage://...` fragment of the Joomla media field; any other fragment (the `#icon` of an SVG sprite, for example) is kept. Values with quotes, backslashes, angle brackets or control characters are refused before they can reach `url("...")` or `src="..."`.
+- CHANGE: "Hide 'Forgot your login details?' link" is off by default for new installations (the link only points to a documentation page, but a plugin should not remove Joomla interface elements unless asked). Existing settings are untouched, and the installer's migration keeps the link hidden for sites whose old login plugin never saved the option.
+- README: translucent colors, the recovery link, and the dependency on the Atum markup.
+- Tests: alpha and flatten, fragment handling, the migration default; the golden test leaves translucent colors out (the old plugins ignored alpha, which is exactly what changed).
+
 ## 1.0.3 (2026-11-20)
 - FIX: the installer's migration is now one database transaction. Storing the copied settings, switching this plugin on and switching the old FG Admin Login/Page Customizer plugins off either all happen or none does. Before, a database error between the steps could leave this plugin and an old one enabled together (verified in Joomla 5.4 with a database that refused the last step: 1.0.2 left both on, 1.0.3 changes nothing).
 - If the database also cannot undo the steps, the warning says so and asks to check the plugin list, instead of claiming that nothing was changed (new string `MIGRATION_ROLLBACK_FAILED`).

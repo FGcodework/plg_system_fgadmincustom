@@ -80,6 +80,16 @@ one. If you do, nothing breaks (both add their styles, which look the same after
 
 Every color field left empty falls back to the Atum template's own styling.
 
+**Translucent colors.** Colors may carry an alpha byte (`#rrggbbaa`). The automatic
+text color is chosen as if the color lay over white, because the plugin cannot know
+what is behind it; with a translucent background over something dark, set the text
+color yourself.
+
+**"Forgot your login details?"** The link below the login form only points to a page
+of the Joomla documentation. It is shown by default; switch *Hide ...* on (tab
+*Login: Logo & Layout*) to hide it. Sites migrated from FG Admin Login Customizer keep
+the old behaviour (hidden) unless they had saved the option as off.
+
 ## Footer text
 
 The login footer accepts simple HTML: links (`http`, `https`, `mailto`, `tel` or relative), `strong`, `em`, `b`, `i`, `u`, `small`, `span`, `div`, `p`, `br`, `hr`, lists, `sub`/`sup`, `abbr` and `img`, with the attributes `class`, `title` and the link/image attributes. When settings are imported, anything else (scripts, inline `style`, event handlers, frames, forms ...) makes the footer invalid and it is skipped with a warning; style it with a `class` and the Custom CSS field instead. Links opened in a new tab automatically get `rel="noopener"`.
@@ -110,6 +120,12 @@ plugins does copy them - same site, same administrator.)
 
 - Joomla 5 or 6
 - PHP 8.1+
+
+The login-page and header rules, and the logo replacement, are written against the
+HTML of the Atum template (`.view-login`, `body.com_login`, the logo slot and the
+header markup). A larger Atum change in a future Joomla release may need an update of
+this plugin; after each new Joomla minor version, open the login page and a logged-in
+page once and compare (the `?fgac=off` switch shows the page without the plugin).
 
 ## Support this project
 

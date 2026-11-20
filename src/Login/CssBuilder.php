@@ -515,7 +515,7 @@ final class CssBuilder
     {
         $css = [];
 
-        if ((int) $this->params->get('hide_forgot', 1) === 1) {
+        if ((int) $this->params->get('hide_forgot', 0) === 1) {
             // Only .text-center blocks AFTER the login form (the recovery
             // link). The logo slot also carries .text-center but sits BEFORE
             // the form, so the sibling combinator can never match it.

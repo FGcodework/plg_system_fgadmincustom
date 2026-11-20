@@ -6,7 +6,7 @@
     <creationDate>2026-11</creationDate>
     <copyright>(C) 2026. GNU GPL v2 or later.</copyright>
     <license>GNU General Public License version 2 or later</license>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
     <description>PLG_SYSTEM_FGADMINCUSTOM_XML_DESCRIPTION</description>
     <namespace path="src">FG\Plugin\System\AdminCustom</namespace>
     <scriptfile>script.php</scriptfile>
@@ -91,7 +91,7 @@
                     <option value="0">JNO</option>
                     <option value="1">JYES</option>
                 </field>
-                <field name="login_hide_forgot" type="radio" layout="joomla.form.field.radio.switcher" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_FORGOT_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_FORGOT_DESC" default="1">
+                <field name="login_hide_forgot" type="radio" layout="joomla.form.field.radio.switcher" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_FORGOT_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_FORGOT_DESC" default="0">
                     <option value="0">JNO</option>
                     <option value="1">JYES</option>
                 </field>

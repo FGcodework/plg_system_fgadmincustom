@@ -127,8 +127,11 @@ foreach ($names as $name => $field) {
     }
 }
 
-$ok((string) $xml->version === '1.0.3', 'version 1.0.3');
+$ok((string) $xml->version === '1.0.4', 'version 1.0.4');
 $ok((string) $xml->scriptfile === 'script.php' && is_file($root . '/script.php'), 'script file present');
+
+// The recovery link is shown by default (the old login plugin hid it); migration keeps the old behaviour.
+$ok($xml->xpath('//field[@name="login_hide_forgot"]')[0]['default'] . '' === '0', 'login_hide_forgot is off by default');
 
 // Defaults equal the old plugins' defaults.
 if ($argc >= 3) {
@@ -148,7 +151,7 @@ if ($argc >= 3) {
     $new      = $defaults($root . '/fgadmincustom.xml');
 
     foreach ($oldLogin as $name => $default) {
-        if (\in_array($name, ['support_note', 'export_json', 'import_json', 'hide_generator', 'use_page_style', 'brand_color', 'card_shadow', 'btn_shadow', 'card_radius', 'ctrl_radius'], true)) {
+        if (\in_array($name, ['support_note', 'export_json', 'import_json', 'hide_generator', 'hide_forgot', 'use_page_style', 'brand_color', 'card_shadow', 'btn_shadow', 'card_radius', 'ctrl_radius'], true)) {
             continue;
         }
 

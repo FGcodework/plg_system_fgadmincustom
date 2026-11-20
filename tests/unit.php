@@ -54,10 +54,27 @@ $eq(round(C::contrast('#000000', '#ffffff'), 2), 21.0, 'contrast max');
 $eq(C::shade('#808080', -1.0), '#000000', 'shade black');
 $eq(C::toRgba('#ff0000', 50), 'rgba(255, 0, 0, 0.50)', 'rgba');
 
+// translucent colors are laid over a base before the text color is chosen
+$eq([C::alpha('#abc'), C::alpha('#aabbcc'), C::alpha('#aabbcc00'), C::alpha('#aabbccff')], [1.0, 1.0, 0.0, 1.0], 'alpha byte');
+$eq(round(C::alpha('#00000080'), 2), 0.5, 'alpha half');
+$eq([C::flatten('#336699'), C::flatten('#abc'), C::flatten('#336699ff')], ['#336699', '#aabbcc', '#336699'], 'flatten opaque unchanged');
+$eq([C::flatten('#00000000'), C::flatten('#000000ff'), C::flatten('#ff000080')], ['#ffffff', '#000000', '#ff7f7f'], 'flatten over white');
+$eq(C::flatten('#ffffff80', '#000000'), '#808080', 'flatten over a given base');
+$eq([C::contrastText('#000000'), C::contrastText('#00000020'), C::contrastText('#00000020', '#000000'), C::contrastText('#000000f0')], ['#ffffff', '#000000', '#ffffff', '#ffffff'], 'faint black is light: dark text; strong black: light text');
+$eq([C::contrastText('#8b5a2b'), C::contrastText('#8b5a2bcc')], ['#ffffff', '#000000'], 'translucent brown over white is judged lighter than the opaque one');
+$eq(round(C::contrast('#00000000', '#ffffff'), 2), 1.0, 'fully transparent equals the base');
+$eq(round(C::luminance('#ffffff80'), 4), 1.0, 'white over white');
+
 // ------------------------------------------------------------------- MediaUrl
 $eq(M::clean(''), '', 'media empty');
 $eq(M::clean('images/a.png#joomlaImage://local-images/a.png?width=1'), '/site/images/a.png', 'media fragment stripped');
 $eq(M::clean('#joomlaImage://x'), '', 'media only fragment');
+$eq(M::clean('images/logo.svg#icon'), '/site/images/logo.svg#icon', 'other fragments are kept (SVG)');
+$eq(M::clean('images/logo.svg#icon#joomlaImage://local-images/logo.svg?width=1&height=1'), '/site/images/logo.svg#icon', 'only the Joomla fragment is stripped');
+$eq(M::clean('images/a.png#JOOMLAIMAGE://x'), '/site/images/a.png', 'Joomla fragment, any case');
+$eq(M::clean('images/a.png#joomlaImageX'), '/site/images/a.png#joomlaImageX', 'not the Joomla fragment: kept');
+$eq([M::clean('a".png'), M::clean("a.png\n#x"), M::clean('a\\b.png'), M::clean('a<b>.png'), M::clean("a'b.png")], ['', '', '', '', ''], 'characters that could break out of url()/src are refused');
+$eq(M::clean('https://e.com/a.svg#frag'), 'https://e.com/a.svg#frag', 'absolute URL keeps its fragment');
 $eq(M::clean('https://e.com/a.png'), 'https://e.com/a.png', 'media absolute');
 $eq(M::clean('//cdn.e.com/a.png'), '//cdn.e.com/a.png', 'media protocol relative');
 
@@ -208,6 +225,12 @@ $eq($m['params']['login_logo'] . '|' . $m['params']['login_bg_type'], 'images/l.
 $eq($m['params']['login_custom_js'], 'x()', 'login only: custom_js carried over (same site)');
 $eq(isset($m['params']['login_hide_generator']) || isset($m['params']['hide_generator']) || isset($m['params']['use_page_style']), false, 'login only: dropped keys');
 $eq($m['notes'], ['GENERATOR_WAS_ON'], 'login only: generator note');
+$eq($m['params']['login_hide_forgot'], 1, 'login only: option never saved -> the old default (hidden) is kept, not this plugin\'s new default');
+$m2 = LM::fromLegacy($loginOnly + ['hide_forgot' => '0'], null);
+$eq($m2['params']['login_hide_forgot'], '0', 'login only: a saved value is carried over as it was');
+$m3 = LM::fromLegacy($loginOnly + ['hide_forgot' => '1'], null);
+$eq($m3['params']['login_hide_forgot'], '1', 'login only: saved "hidden" stays hidden');
+$eq((int) (new Registry([]))->get('hide_forgot', 0), 0, 'a missing value is "not hidden"');
 
 $pageOnly = ['brand_color' => '#8b5a2b', 'header_color' => '#112233', 'logo' => 'images/p.png', 'ctrl_radius' => '8', 'menu_open_first' => '1', 'sidebar_follow' => '1'];
 $m = LM::fromLegacy(null, $pageOnly);
@@ -305,6 +328,8 @@ $eq(BM::apply('<div class="main-brand logo"><div>unbalanced', '/a.png', '', ''),
 // ------------------------------------------------------------------- Login CssBuilder
 $eq((new LoginCss(new Registry([])))->build() !== '', true, 'login css default has base rules');
 $eq(str_contains((new LoginCss(SC::login(new Registry(['brand_color' => '#8b5a2b']))))->build(), '#8b5a2b'), true, 'login css gets the Brand color');
+$forgotRule = static fn (array $p): bool => str_contains((new LoginCss(SC::login(new Registry($p))))->build(), 'form ~ .text-center');
+$eq([$forgotRule([]), $forgotRule(['login_hide_forgot' => '0']), $forgotRule(['login_hide_forgot' => '1'])], [false, false, true], 'login css: recovery link hidden only when asked');
 $eq(str_contains((new LoginCss(SC::login(new Registry(['login_use_brand' => '0', 'brand_color' => '#8b5a2b']))))->build(), '#8b5a2b'), false, 'login css without Brand');
 $eq(str_contains((new LoginCss(SC::login(new Registry(['ctrl_radius' => '99']))))->build(), 'border-radius: 40px'), false, 'login css ignores an invalid Brand radius');
 $eq(str_contains((new LoginCss(SC::login(new Registry(['login_ctrl_radius' => '99']))))->build(), 'border-radius: 40px'), true, 'login css radius clamped');

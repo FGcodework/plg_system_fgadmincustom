@@ -57,7 +57,9 @@ mt_srand($seed);
 
 $pick = static fn (array $pool) => $pool[mt_rand(0, \count($pool) - 1)];
 
-$colors  = ['', '', '#1c3d5c', '#FFFFFF', '#f5d000', '#000', '#8b5a2b', '#8b5a2bcc', 'red', '#12345', '#E8F0F8'];
+// Translucent colors (#rrggbbaa) are left out on purpose: the old plugins ignored the alpha byte when
+// choosing a text color, this one lays the color over white first (see the ColorHelper unit tests).
+$colors  = ['', '', '#1c3d5c', '#FFFFFF', '#f5d000', '#000', '#8b5a2b', '#8b5a2b', 'red', '#12345', '#E8F0F8'];
 $radii   = ['', '', '0', '4', '12', '40', '60', '99', 'abc', 12, '12.5', ' 7 '];
 $shadows = ['none', 'none', 'subtle', 'medium', 'strong', '', 'huge'];
 $flags   = [0, 1, '0', '1'];

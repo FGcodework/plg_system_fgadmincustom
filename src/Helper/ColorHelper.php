@@ -30,21 +30,53 @@ final class ColorHelper
     }
 
     /**
-     * More readable of black/white on a hex background (WCAG contrast ratio).
+     * Opacity of a hex color: 1.0 for #rgb / #rrggbb, the alpha byte of #rrggbbaa as 0..1.
      */
-    public static function contrastText(string $hexBg): string
+    public static function alpha(string $hex): float
     {
-        $luminance = self::luminance($hexBg);
+        $hex = ltrim($hex, '#');
+
+        return \strlen($hex) === 8 ? hexdec(substr($hex, 6, 2)) / 255 : 1.0;
+    }
+
+    /**
+     * Lays a (possibly translucent) color over an opaque base and returns the
+     * resulting opaque #rrggbb. The real base is not known to this class, so
+     * white is the documented default; an opaque color comes back unchanged.
+     */
+    public static function flatten(string $hex, string $base = '#ffffff'): string
+    {
+        $alpha = self::alpha($hex);
+        $rgb   = self::toRgb($hex);
+
+        if ($alpha < 1.0) {
+            $under = self::toRgb($base);
+
+            foreach ($rgb as $i => $channel) {
+                $rgb[$i] = (int) round($channel * $alpha + $under[$i] * (1 - $alpha));
+            }
+        }
+
+        return sprintf('#%02x%02x%02x', $rgb[0], $rgb[1], $rgb[2]);
+    }
+
+    /**
+     * More readable of black/white on a hex background (WCAG contrast ratio).
+     * A translucent background is judged as it looks over $base (white by default).
+     */
+    public static function contrastText(string $hexBg, string $base = '#ffffff'): string
+    {
+        $luminance = self::luminance($hexBg, $base);
 
         return 1.05 / ($luminance + 0.05) >= ($luminance + 0.05) / 0.05 ? '#ffffff' : '#000000';
     }
 
     /**
-     * WCAG relative luminance (0..1).
+     * WCAG relative luminance (0..1); a translucent color is first laid over $base.
      */
-    public static function luminance(string $hex): float
+    public static function luminance(string $hex, string $base = '#ffffff'): float
     {
-        [$r, $g, $b] = self::toRgb($hex);
+        [$r, $g, $b] = self::toRgb(self::flatten($hex, $base));
 
         $linearize = static function (int $channel): float {
             $c = $channel / 255;

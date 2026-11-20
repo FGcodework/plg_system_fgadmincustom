@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.3
+ * @version     1.0.4
  * @license     GNU General Public License version 2 or later
  *
  * Translates the settings of the two plugins this one replaces
@@ -114,6 +114,12 @@ final class LegacyMapper
                 if (\array_key_exists($key, $login)) {
                     $out['login_' . $key] = $login[$key];
                 }
+            }
+
+            // The old plugin hid the recovery link unless told otherwise; this one does not.
+            // A site that never saved the option keeps the link hidden, as it was.
+            if (!\array_key_exists('hide_forgot', $login)) {
+                $out['login_hide_forgot'] = 1;
             }
 
             $isolate   = false;
