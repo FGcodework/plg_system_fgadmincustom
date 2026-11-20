@@ -107,7 +107,15 @@ namespace Joomla\CMS {
         public array $rows = [];
         public bool $failSelect = false;
         public bool $failOn     = false;   // fail the statement that stores the new params
+        public bool $failDisable = false;  // fail the statement that switches the old plugins off
+        public bool $failCommit  = false;
+        public bool $failRollback = false;
         public int $executed    = 0;
+        public int $depth       = 0;
+        /** @var string[] */
+        public array $log       = [];
+        /** @var array<int, array> snapshots, one per open transaction level */
+        private array $snapshots = [];
         private ?FakeQuery $query = null;
 
         public function getQuery(bool $new = false): FakeQuery
@@ -125,6 +133,37 @@ namespace Joomla\CMS {
             $this->query = $q;
 
             return $this;
+        }
+
+        public function transactionStart(bool $asSavepoint = false): void
+        {
+            $this->log[]       = 'start';
+            $this->snapshots[] = $this->rows;
+            $this->depth++;
+        }
+
+        public function transactionCommit(bool $toSavepoint = false): void
+        {
+            $this->log[] = 'commit';
+
+            if ($this->failCommit) {
+                throw new \RuntimeException('simulated commit failure');
+            }
+
+            array_pop($this->snapshots);
+            $this->depth--;
+        }
+
+        public function transactionRollback(bool $toSavepoint = false): void
+        {
+            $this->log[] = 'rollback';
+
+            if ($this->failRollback) {
+                throw new \RuntimeException('simulated rollback failure');
+            }
+
+            $this->rows = array_pop($this->snapshots);
+            $this->depth--;
         }
 
         public function loadAssocList(): array
@@ -151,6 +190,10 @@ namespace Joomla\CMS {
 
             if ($this->failOn && str_contains($sets, 'params')) {
                 throw new \RuntimeException('simulated update failure');
+            }
+
+            if ($this->failDisable && !str_contains($sets, 'params')) {
+                throw new \RuntimeException('simulated disable failure');
             }
 
             $targets = $q->whereIn !== [] ? $q->whereIn : [$q->bound[':element']];

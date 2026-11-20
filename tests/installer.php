@@ -181,9 +181,56 @@ $db->failOn     = true;
 $eq([$ok, $db->rows['fgadminlogincustom']['enabled'], $db->rows['fgadminpagecustom']['enabled'], $db->rows['fgadmincustom']['enabled']], [true, 1, 1, 0], 'save failure: old plugins keep running');
 $eq(\in_array('warning', $types($msgs), true) && !str_contains($texts($msgs), 'were copied'), true, 'save failure: no false success message');
 
+// ---- the writes are one transaction
+$fresh = static function () use ($row, $oldLogin, $oldPage, $newDefaults): FakeDb {
+    $d       = new FakeDb();
+    $d->rows = [
+        'fgadminlogincustom' => $row('fgadminlogincustom', $oldLogin, 1),
+        'fgadminpagecustom'  => $row('fgadminpagecustom', $oldPage, 1),
+        'fgadmincustom'      => $row('fgadmincustom', $newDefaults, 0),
+    ];
+
+    return $d;
+};
+
+$db          = $fresh();
+[$ok, $msgs] = $run($db);
+$eq([$db->log, $db->depth], [['start', 'commit'], 0], 'success: one transaction, committed, none left open');
+
+$db            = $fresh();
+$db->failDisable = true;
+[$ok, $msgs]   = $run($db);
+$eq([$ok, $db->log, $db->depth], [true, ['start', 'rollback'], 0], 'failure after the settings were saved: rolled back');
+$eq([$db->rows['fgadminlogincustom']['enabled'], $db->rows['fgadminpagecustom']['enabled'], $db->rows['fgadmincustom']['enabled'], $db->rows['fgadmincustom']['params']], [1, 1, 0, json_encode($newDefaults)], 'failure after the settings were saved: the new plugin has no settings and is off, the old ones still on');
+$eq([$types($msgs), str_contains($texts($msgs), 'simulated disable failure'), str_contains($texts($msgs), 'Nothing was changed')], [['warning'], true, true], 'failure after the settings were saved: the warning says nothing was changed');
+
+$db             = $fresh();
+$db->failCommit = true;
+[$ok, $msgs]    = $run($db);
+$eq([$ok, $db->log, $db->rows['fgadminlogincustom']['enabled'], $db->rows['fgadmincustom']['enabled']], [true, ['start', 'commit', 'rollback'], 1, 0], 'commit fails: rolled back, nothing changed');
+
+$db               = $fresh();
+$db->failDisable  = true;
+$db->failRollback = true;
+[$ok, $msgs]      = $run($db);
+$eq([$ok, $types($msgs), str_contains($texts($msgs), 'rolled back'), str_contains($texts($msgs), 'Nothing was changed')], [true, ['warning'], true, false], 'rollback fails too: installation still ok, the warning does not claim nothing changed');
+
+$db          = $fresh();
+$db->failOn  = true;
+[$ok, $msgs] = $run($db);
+$eq([$db->log, $db->rows['fgadminlogincustom']['enabled']], [['start', 'rollback'], 1], 'failure on the first statement: rolled back');
+
+$db          = $fresh();
+[$ok, $msgs] = $run($db, 'update');
+$eq($db->log, [], 'update: no transaction opened');
+
+$db             = $fresh();
+$db->rows       = ['fgadmincustom' => $row('fgadmincustom', $newDefaults, 0)];
+[$ok, $msgs]    = $run($db);
+$eq($db->log, [], 'nothing to migrate: no transaction opened');
+
 // ---- language files are loaded before messages are built
-$db->failOn = false;
-$run($db);
+$run($fresh());
 $eq(\count(Factory::$app->lang->loaded) >= 2, true, 'language files requested');
 
 echo $fail === 0 ? "OK: $n installer assertions passed\n" : "$fail of $n FAILED\n";

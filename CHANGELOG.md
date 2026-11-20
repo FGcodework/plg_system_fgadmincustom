@@ -1,5 +1,11 @@
 # Changelog - plg_system_fgadmincustom
 
+## 1.0.3 (2026-11-20)
+- FIX: the installer's migration is now one database transaction. Storing the copied settings, switching this plugin on and switching the old FG Admin Login/Page Customizer plugins off either all happen or none does. Before, a database error between the steps could leave this plugin and an old one enabled together (verified in Joomla 5.4 with a database that refused the last step: 1.0.2 left both on, 1.0.3 changes nothing).
+- If the database also cannot undo the steps, the warning says so and asks to check the plugin list, instead of claiming that nothing was changed (new string `MIGRATION_ROLLBACK_FAILED`).
+- A problem with an installer message after the data is saved can no longer be reported as a failed migration.
+- Tests: the installer tests cover commit, rollback after each step, a failing commit and a failing rollback (34 -> 43 installer assertions).
+
 ## 1.0.2 (2026-11-20)
 - SECURITY: Custom CSS is no longer imported (Custom JavaScript never was). Imported style could not be made safe by any filter - a `position:fixed` rule is enough to cover the login page with a fake one - and the import is meant for passing settings between people and sites. The import skips both and names them in a warning; the Export JSON still contains them as a backup, and the installer's migration from the old plugins still copies them.
 - Tests: the import tests cover both keys (and the legacy names `custom_css` / `custom_js` of the old plugins' exports).

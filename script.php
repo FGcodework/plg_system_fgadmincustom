@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.2
+ * @version     1.0.3
  * @license     GNU General Public License version 2 or later
  *
  * Install script. On a fresh installation it takes over the settings of the
@@ -23,6 +23,15 @@ use Joomla\CMS\Installer\InstallerScriptInterface;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+
+/**
+ * The migration failed and the database could not undo its first steps.
+ */
+if (!class_exists('FGAdminCustomRollbackFailed', false)) {
+    class FGAdminCustomRollbackFailed extends \RuntimeException
+    {
+    }
+}
 
 return new class () implements InstallerScriptInterface {
     private const ELEMENT = 'fgadmincustom';
@@ -58,7 +67,16 @@ return new class () implements InstallerScriptInterface {
 
         try {
             $this->loadClasses();
-            $this->migrate();
+            $outcome = $this->migrate();
+        } catch (\FGAdminCustomRollbackFailed $e) {
+            $this->message(
+                'PLG_SYSTEM_FGADMINCUSTOM_MIGRATION_ROLLBACK_FAILED',
+                'The settings of the old FG Admin Login/Page Customizer plugins could not be copied and the change could not be rolled back (%s). Check Extensions - Plugins: make sure that either this plugin or the old FG Admin Login/Page Customizer plugins are enabled, not both.',
+                'warning',
+                [$e->getMessage()]
+            );
+
+            return true;
         } catch (\Throwable $e) {
             $this->message(
                 'PLG_SYSTEM_FGADMINCUSTOM_MIGRATION_FAILED',
@@ -66,6 +84,17 @@ return new class () implements InstallerScriptInterface {
                 'warning',
                 [$e->getMessage()]
             );
+
+            return true;
+        }
+
+        // The data is committed by now; a problem with a message must not look like a failed migration.
+        try {
+            if ($outcome !== null) {
+                $this->report($outcome['enable'], $outcome['notes'], $outcome['db']);
+            }
+        } catch (\Throwable $e) {
+            // Nothing to undo - the settings are in place.
         }
 
         return true;
@@ -84,7 +113,13 @@ return new class () implements InstallerScriptInterface {
         }
     }
 
-    private function migrate(): void
+    /**
+     * Copies the settings and switches the plugins over in ONE transaction: either
+     * the new plugin has its settings and the old ones are off, or nothing changed.
+     *
+     * @return array{enable: bool, notes: string[], db: DatabaseInterface}|null  null when there is nothing to migrate
+     */
+    private function migrate(): ?array
     {
         $db   = Factory::getContainer()->get(DatabaseInterface::class);
         $rows = $this->fetchRows($db, [self::LOGIN, self::PAGE, self::ELEMENT]);
@@ -94,7 +129,7 @@ return new class () implements InstallerScriptInterface {
         $own   = $rows[self::ELEMENT] ?? null;
 
         if (($login === null && $page === null) || $own === null) {
-            return;
+            return null;
         }
 
         $loginOn = $login !== null && (int) $login['enabled'] === 1;
@@ -113,14 +148,36 @@ return new class () implements InstallerScriptInterface {
         // Switch this plugin on only when an old plugin was doing something.
         $enable = $loginOn || $pageOn;
 
-        $this->save($db, $params, $enable);
+        $db->transactionStart(true);
 
-        // Only after the new settings are safely stored: the old plugins step aside.
-        $this->disableOld($db, array_values(array_filter([
-            $login === null ? null : self::LOGIN,
-            $page === null ? null : self::PAGE,
-        ])));
+        try {
+            $this->save($db, $params, $enable);
 
+            // The old plugins step aside only together with the new settings being stored.
+            $this->disableOld($db, array_values(array_filter([
+                $login === null ? null : self::LOGIN,
+                $page === null ? null : self::PAGE,
+            ])));
+
+            $db->transactionCommit(true);
+        } catch (\Throwable $e) {
+            try {
+                $db->transactionRollback(true);
+            } catch (\Throwable $rollback) {
+                throw new \FGAdminCustomRollbackFailed($e->getMessage(), 0, $e);
+            }
+
+            throw $e;
+        }
+
+        return ['enable' => $enable, 'notes' => $result['notes'], 'db' => $db];
+    }
+
+    /**
+     * @param string[] $notes
+     */
+    private function report(bool $enable, array $notes, DatabaseInterface $db): void
+    {
         if ($enable) {
             $this->message(
                 'PLG_SYSTEM_FGADMINCUSTOM_MIGRATION_DONE',
@@ -135,7 +192,7 @@ return new class () implements InstallerScriptInterface {
             );
         }
 
-        if (\in_array('GENERATOR_WAS_ON', $result['notes'], true) && !$this->isEnabled($db, 'fgremovegenerator')) {
+        if (\in_array('GENERATOR_WAS_ON', $notes, true) && !$this->isEnabled($db, 'fgremovegenerator')) {
             $this->message(
                 'PLG_SYSTEM_FGADMINCUSTOM_MIGRATION_GENERATOR',
                 'FG Admin Login Customizer used to remove the generator meta tag from the login page. This plugin does not; install and enable the plugin FG Remove Generator to keep it hidden.',
@@ -143,7 +200,7 @@ return new class () implements InstallerScriptInterface {
             );
         }
 
-        if (\in_array('LOGIN_BRAND_ISOLATED', $result['notes'], true)) {
+        if (\in_array('LOGIN_BRAND_ISOLATED', $notes, true)) {
             $this->message(
                 'PLG_SYSTEM_FGADMINCUSTOM_MIGRATION_ISOLATED',
                 'The login page did not share the brand settings of the administrator before, so "Use Brand settings" is off for it (tab Login: Card & colors). Switch it on to give both the same look.',

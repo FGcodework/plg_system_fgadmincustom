@@ -87,7 +87,7 @@ foreach (['en-GB', 'sk-SK'] as $tag) {
     $ok(!str_contains(file_get_contents($root . "/language/$tag/plg_system_fgadmincustom.ini"), "\r"), "$tag ini is LF");
 
     // Strings used by sprintf keep exactly one %s.
-    foreach (['IMPORT_SKIPPED', 'IMPORT_CODE_SKIPPED', 'REPLACED_PLUGIN_ENABLED', 'MIGRATION_FAILED'] as $k) {
+    foreach (['IMPORT_SKIPPED', 'IMPORT_CODE_SKIPPED', 'REPLACED_PLUGIN_ENABLED', 'MIGRATION_FAILED', 'MIGRATION_ROLLBACK_FAILED'] as $k) {
         $ok(substr_count($ini['PLG_SYSTEM_FGADMINCUSTOM_' . $k], '%s') === 1, "$tag $k has one %s");
     }
 }
@@ -127,7 +127,7 @@ foreach ($names as $name => $field) {
     }
 }
 
-$ok((string) $xml->version === '1.0.2', 'version 1.0.2');
+$ok((string) $xml->version === '1.0.3', 'version 1.0.3');
 $ok((string) $xml->scriptfile === 'script.php' && is_file($root . '/script.php'), 'script file present');
 
 // Defaults equal the old plugins' defaults.
