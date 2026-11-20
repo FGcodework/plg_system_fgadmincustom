@@ -2,11 +2,11 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.1
+ * @version     1.0.2
  * @license     GNU General Public License version 2 or later
  *
  * Validates settings values coming from an imported JSON, key by key.
- * Executable code (login_custom_js) is never importable; see the plugin class.
+ * Custom JavaScript and custom CSS are never importable (Schema::NOT_IMPORTABLE).
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ final class SettingsSanitizer
 
     /**
      * Returns the valid values (normalised) and the names of the rejected keys.
-     * Keys that are not importable (unknown, login_custom_js, the preset trigger,
+     * Keys that are not importable (unknown, custom JS/CSS, the preset trigger,
      * the export/import fields) are ignored silently.
      *
      * @param array<string, mixed> $input
@@ -103,8 +103,8 @@ final class SettingsSanitizer
             case 'footer':
                 return self::cleanFooter($text);
 
-            default: // css
-                return self::cleanCss($text);
+            default:
+                return null;
         }
     }
 
@@ -134,17 +134,5 @@ final class SettingsSanitizer
     private static function cleanFooter(string $text): ?string
     {
         return FooterSanitizer::sanitize($text);
-    }
-
-    /**
-     * Custom CSS must not be able to leave its <style> element.
-     */
-    private static function cleanCss(string $text): ?string
-    {
-        if (\strlen($text) > 50000 || preg_match('#<\s*/?\s*(style|script)\b#i', $text) === 1) {
-            return null;
-        }
-
-        return $text;
     }
 }

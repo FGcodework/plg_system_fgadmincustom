@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.1
+ * @version     1.0.2
  * @license     GNU General Public License version 2 or later
  *
  * Translates the settings of the two plugins this one replaces

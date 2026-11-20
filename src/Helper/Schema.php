@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.1
+ * @version     1.0.2
  * @license     GNU General Public License version 2 or later
  *
  * The one place that knows how the settings of this plugin are named.
@@ -55,6 +55,14 @@ final class Schema
         'custom_css', 'custom_js',
     ];
 
+    /**
+     * Settings that can only be typed in by hand, never arrive through an import: script
+     * runs on the login page next to the password field, and style can turn that page into
+     * a look-alike without a single suspicious character, so no filter could make it safe.
+     * (Legacy names of the old plugins included.)
+     */
+    public const NOT_IMPORTABLE = ['login_custom_js', 'login_custom_css', 'custom_js', 'custom_css'];
+
     /** Plain names of the administrator settings (without the "admin_" prefix); brand keys excluded. */
     public const ADMIN = [
         'header_color', 'sidebar_follow', 'sidebar_color', 'page_bg',
@@ -63,8 +71,9 @@ final class Schema
 
     /**
      * How an imported value of each key is validated.
-     * Types: color, media, flag, range [min, max], list [allowed...], footer, css.
-     * "login_custom_js" is deliberately absent: code is never importable.
+     * Types: color, media, flag, range [min, max], list [allowed...], footer.
+     * "login_custom_js" and "login_custom_css" are deliberately absent: custom code and
+     * custom styling are never importable (see NOT_IMPORTABLE).
      *
      * @return array<string, array{0: string, 1?: mixed, 2?: mixed}>
      */
@@ -125,9 +134,6 @@ final class Schema
             'login_header_text'        => ['color'],
             'login_hide_lang_switcher' => ['flag'],
             'login_header_match_btn'   => ['flag'],
-
-            // Login: advanced
-            'login_custom_css' => ['css'],
 
             // Administrator
             'admin_header_color'    => ['color'],

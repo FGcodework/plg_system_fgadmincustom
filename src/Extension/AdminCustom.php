@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.1
+ * @version     1.0.2
  * @license     GNU General Public License version 2 or later
  *
  * Visual customization of the Joomla administrator (Atum template, Joomla 5/6)
@@ -25,6 +25,7 @@ use FG\Plugin\System\AdminCustom\Admin\MenuScript;
 use FG\Plugin\System\AdminCustom\Helper\ImportExport;
 use FG\Plugin\System\AdminCustom\Helper\LegacyMapper;
 use FG\Plugin\System\AdminCustom\Helper\MediaUrl;
+use FG\Plugin\System\AdminCustom\Helper\Schema;
 use FG\Plugin\System\AdminCustom\Helper\SettingsSanitizer;
 use FG\Plugin\System\AdminCustom\Helper\StyleContext;
 use FG\Plugin\System\AdminCustom\Login\BodyModifier;
@@ -45,7 +46,7 @@ use Joomla\Event\SubscriberInterface;
 final class AdminCustom extends CMSPlugin implements SubscriberInterface
 {
     /** Shown in the generated CSS comment. */
-    public const VERSION = '1.0.1';
+    public const VERSION = '1.0.2';
 
     /** Value of the "schema" marker in the settings export. */
     public const EXPORT_SCHEMA = 'fgadmincustom/1';
@@ -473,13 +474,22 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
 
         unset($imported['export_json'], $imported['import_json'], $imported['_schema']);
 
-        // Never let imported JSON carry executable code into the login page. An
-        // import is typically a settings blob passed between people/sites, so
-        // the admin pasting it has usually not read every value in it, and the
-        // custom script runs on the login screen where the username and
-        // password fields live. Every other setting is declarative and safe.
-        $skippedJs = \array_key_exists('custom_js', $imported) || \array_key_exists('login_custom_js', $imported);
-        unset($imported['custom_js'], $imported['login_custom_js']);
+        // Custom JavaScript and custom CSS are typed in by hand, never imported. An import
+        // is typically a settings blob passed between people and sites, so the admin pasting
+        // it has usually not read every value in it: script would run on the login screen
+        // next to the username and password fields, and style can turn that screen into a
+        // look-alike without anything a filter could recognise. Every other setting is
+        // declarative and validated one by one.
+        $skippedCode = [];
+
+        foreach (Schema::NOT_IMPORTABLE as $codeKey) {
+            if (\array_key_exists($codeKey, $imported)) {
+                $skippedCode[] = str_starts_with($codeKey, 'login_') ? $codeKey : 'login_' . $codeKey;
+                unset($imported[$codeKey]);
+            }
+        }
+
+        $skippedCode = array_values(array_unique($skippedCode));
 
         // JSON exported by one of the two plugins this one replaces.
         $legacy = LegacyMapper::fromLegacyJson($imported);
@@ -502,8 +512,8 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
             );
         }
 
-        if ($skippedJs) {
-            $app->enqueueMessage(Text::_('PLG_SYSTEM_FGADMINCUSTOM_IMPORT_JS_SKIPPED'), 'warning');
+        if ($skippedCode !== []) {
+            $app->enqueueMessage(Text::sprintf('PLG_SYSTEM_FGADMINCUSTOM_IMPORT_CODE_SKIPPED', implode(', ', $skippedCode)), 'warning');
         }
 
         return $updates;

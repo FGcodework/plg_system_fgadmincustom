@@ -84,14 +84,16 @@ $eq($r['values']['admin_sidebar_follow'], 1, 'san flag');
 $eq($r['values']['login_bg_type'], 'gradient', 'san list');
 $eq($r['values']['admin_logo'], 'images/a.png#joomlaImage://x', 'san media');
 $eq($r['values']['login_enabled'], 0, 'san scope flag');
-$eq(array_key_exists('login_custom_js', $r['values']), false, 'san login_custom_js never importable');
+$eq(array_key_exists('login_custom_js', $r['values']) || array_key_exists('login_custom_css', $r['values']), false, 'san custom JS and CSS never importable');
 $eq(array_key_exists('login_theme_preset', $r['values']) || array_key_exists('unknown', $r['values']) || array_key_exists('export_json', $r['values']) || array_key_exists('_schema', $r['values']), false, 'san ignores non-importable');
 $eq($r['rejected'], ['admin_header_color', 'card_radius', 'card_shadow', 'login_hide_forgot', 'login_logo_fit', 'admin_logo_small', 'login_bg_image'], 'san rejected');
 $eq(S::sanitize(['btn_shadow' => ''])['rejected'], ['btn_shadow'], 'san brand shadow cannot be empty');
 $eq(S::sanitize(['login_footer_text' => '<script>alert(1)</script>'])['rejected'], ['login_footer_text'], 'san footer script');
 $eq(S::sanitize(['login_footer_text' => '<img src=x onerror=alert(1)>'])['rejected'], ['login_footer_text'], 'san footer handler');
 $eq(S::sanitize(['login_footer_text' => '<a href="javascript:alert(1)">x</a>'])['rejected'], ['login_footer_text'], 'san footer js url');
-$eq(S::sanitize(['login_custom_css' => 'a{}</style><script>x</script>'])['rejected'], ['login_custom_css'], 'san css breakout');
+foreach (['login_custom_css' => '@import url("https://example.com/x.css");', 'custom_css' => '.x{color:red}', 'login_custom_js' => 'alert(1)', 'custom_js' => 'alert(1)'] as $k => $v) {
+    $eq(S::sanitize([$k => $v, 'brand_color' => '#112233']), ['values' => ['brand_color' => '#112233'], 'rejected' => []], "san $k is never importable (and not reported as invalid)");
+}
 $eq(S::sanitize(['ctrl_radius' => '-3'])['rejected'], ['ctrl_radius'], 'san negative');
 $eq(S::sanitize(['brand_color' => ['x']])['rejected'], ['brand_color'], 'san array');
 $eq(S::sanitize(['login_brand_color' => ''])['values'], ['login_brand_color' => ''], 'san empty override');

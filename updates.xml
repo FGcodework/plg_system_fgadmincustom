@@ -7,12 +7,12 @@
         <type>plugin</type>
         <folder>system</folder>
         <client>site</client>
-        <version>1.0.1</version>
+        <version>1.0.2</version>
         <infourl title="System - FG Admin Customizer">https://github.com/FGcodework/plg_system_fgadmincustom</infourl>
         <downloads>
-            <downloadurl type="full" format="zip">https://github.com/FGcodework/plg_system_fgadmincustom/releases/download/v1.0.1/plg_system_fgadmincustom_v1.0.1.zip</downloadurl>
+            <downloadurl type="full" format="zip">https://github.com/FGcodework/plg_system_fgadmincustom/releases/download/v1.0.2/plg_system_fgadmincustom_v1.0.2.zip</downloadurl>
         </downloads>
-        <sha256>4677b3e5e6989ae36a13d6bc58f9ae0d3cd8815f49b0c3cf2e8bdd4efb3692f4</sha256>
+        <sha256>a6a0c4b1d7ece61ba461946bff26c0e568b6acfb8cbd181a5115b6800c01d66b</sha256>
         <tags>
             <tag>stable</tag>
         </tags>

@@ -244,23 +244,24 @@ PluginHelper::$enabled = [];
 // import of this plugin's own JSON (custom JS is never taken)
 $app  = $formApp();
 $data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => ['import_json' => json_encode([
-    '_schema' => 'fgadmincustom/1', 'brand_color' => '#112233', 'ctrl_radius' => '7', 'card_radius' => '999', 'login_custom_js' => 'steal()',
+    '_schema' => 'fgadmincustom/1', 'brand_color' => '#112233', 'ctrl_radius' => '7', 'card_radius' => '999', 'login_custom_js' => 'steal()', 'login_custom_css' => 'body{display:none}',
 ])]];
 $plugin($app, [])->prepareAdminForm($form($data));
 $eq([$data->params['brand_color'], $data->params['ctrl_radius'], $data->params['import_json']], ['#112233', 7, ''], 'import: valid values applied, field cleared');
 $eq(array_key_exists('card_radius', $data->params) && $data->params['card_radius'] === 999, false, 'import: invalid value not applied');
-$eq(array_key_exists('login_custom_js', $data->params), false, 'import: custom JS not applied');
+$eq(array_key_exists('login_custom_js', $data->params) || array_key_exists('login_custom_css', $data->params), false, 'import: custom JS and CSS not applied');
 $types = array_column($app->messages, 1);
-$eq(\in_array('PLG_SYSTEM_FGADMINCUSTOM_IMPORT_JS_SKIPPED', $types, true) && \in_array('PLG_SYSTEM_FGADMINCUSTOM_IMPORT_APPLIED', $types, true), true, 'import: user is told what happened');
+$eq(\in_array('PLG_SYSTEM_FGADMINCUSTOM_IMPORT_CODE_SKIPPED|login_custom_js, login_custom_css', $types, true) && \in_array('PLG_SYSTEM_FGADMINCUSTOM_IMPORT_APPLIED', $types, true), true, 'import: user is told what happened');
 $eq(str_contains(implode(' ', $types), 'IMPORT_SKIPPED|card_radius'), true, 'import: rejected keys are listed');
 
 // import of an export of the old login plugin
 $app  = $formApp();
-$old  = ['brand_color' => '#1c3d5c', 'bg_type' => 'color', 'bg_color' => '#101010', 'logo' => 'images/l.png', 'hide_generator' => '1', 'use_page_style' => '0', 'custom_js' => 'steal()', 'ctrl_radius' => '6'];
+$old  = ['brand_color' => '#1c3d5c', 'bg_type' => 'color', 'bg_color' => '#101010', 'logo' => 'images/l.png', 'hide_generator' => '1', 'use_page_style' => '0', 'custom_js' => 'steal()', 'custom_css' => 'body{display:none}', 'ctrl_radius' => '6'];
 $data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => new Registry(['import_json' => json_encode($old)])];
 $plugin($app, [])->prepareAdminForm($form($data));
 $p = $data->params;
 $eq([$p->get('login_bg_type'), $p->get('login_bg_color'), $p->get('login_logo'), $p->get('brand_color'), $p->get('login_custom_js', 'none')], ['color', '#101010', 'images/l.png', '#1c3d5c', 'none'], 'legacy import: login export converted, custom JS dropped');
+$eq([$p->get('login_custom_css', 'none'), \in_array('PLG_SYSTEM_FGADMINCUSTOM_IMPORT_CODE_SKIPPED|login_custom_js, login_custom_css', array_column($app->messages, 1), true)], ['none', true], 'legacy import: the custom CSS of an old export is dropped too, and named');
 $eq(\in_array('PLG_SYSTEM_FGADMINCUSTOM_IMPORT_LEGACY', array_column($app->messages, 1), true), true, 'legacy import: user is told');
 $eq($p->get('login_enabled', 'untouched'), 'untouched', 'legacy import: scope switches untouched');
 

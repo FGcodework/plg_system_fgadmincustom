@@ -76,7 +76,7 @@ one. If you do, nothing breaks (both add their styles, which look the same after
 | **Login: Card & colors** | "Use Brand settings", the login page's own overrides of the Brand values, card and button colors, link color. |
 | **Login: Header bar** | Header colors, language switcher, frontend-link button. |
 | **Login: Advanced** | Custom CSS and JavaScript (see the note below). |
-| **Export / Import** | Read-only JSON export; paste JSON + Save to import. Custom JavaScript is never imported. |
+| **Export / Import** | Read-only JSON export; paste JSON + Save to import. Custom JavaScript and Custom CSS are never imported. |
 
 Every color field left empty falls back to the Atum template's own styling.
 
@@ -93,14 +93,18 @@ If a custom rule ever breaks a page, add `?fgac=off`:
 
 Nothing is saved or changed by the switch.
 
-## A note on Custom JavaScript
+## A note on Custom CSS and JavaScript
 
 The **Custom JavaScript** field runs on the administrator login page - the
 page that carries the username and password inputs. Treat it like editing a
 template file: only paste code you wrote or have read and understood.
-**Import deliberately never carries custom JavaScript over**, so pasting a
-settings JSON from somewhere else cannot execute foreign code on your login
-screen. Copy it across by hand if you want it.
+**Custom CSS** is just as powerful in its own way: it can turn the login page
+into a look-alike of it, and no filter can tell a harmless rule from a hostile
+one. **Import deliberately never carries either of them over**, so pasting a
+settings JSON from somewhere else cannot execute foreign code or restyle your
+login screen. The Export JSON still contains both, as a backup; copy them across
+by hand if you want them. (The installer's one-time migration from the old
+plugins does copy them - same site, same administrator.)
 
 ## Requirements
 
