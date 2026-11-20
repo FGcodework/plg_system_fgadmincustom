@@ -92,6 +92,31 @@ $app = new FakeApp('administrator', true, ['option' => 'com_content'], 'atum', $
 $run($plugin($app, $params));
 $eq($app->doc->wa->styles, [], 'guest on another component: nothing');
 
+$app = new FakeApp('administrator', true, ['option' => 'com_login'], 'othertemplate', $loginHtml);
+$run($plugin($app, $params));
+$eq([$app->doc->wa->styles, $app->body], [[], $loginHtml], 'login page of another administrator template: nothing (the rules are written for Atum)');
+
+// custom CSS cannot leave its <style> element
+$app = new FakeApp('administrator', true, ['option' => 'com_login'], 'atum', $loginHtml);
+$run($plugin($app, $params + ['login_custom_css' => 'a{color:red}</style><script>alert(1)</script><style>b{}']));
+$css = $app->doc->wa->styles['plg.system.fgadmincustom.login'];
+$eq([str_contains($css, '<'), str_contains($css, 'a{color:red}'), str_contains($css, '\\3c /style')], [false, true, true], 'login: "<" in custom CSS is escaped, so </style> cannot end the style block');
+
+// the footer goes through the allowlist when it is printed, too
+$footer = static function (string $html) use ($plugin, $run, $params, $loginHtml): string {
+    $app = new FakeApp('administrator', true, ['option' => 'com_login'], 'atum', $loginHtml);
+    $run($plugin($app, $params + ['login_footer_text' => $html]));
+
+    return $app->body;
+};
+$eq(str_contains($footer('<script>alert(1)</script>'), 'alc-footer'), false, 'footer: a script is not printed (typed into the field, never imported)');
+$eq(str_contains($footer('<a href="javascript:alert(1)">x</a>'), 'javascript'), false, 'footer: a scripting link is not printed');
+$eq(str_contains($footer('<span style="x">a</span>'), 'alc-footer'), false, 'footer: a style attribute makes the value invalid');
+$eq(str_contains($footer('&copy; 2026 <a href="https://example.com/p" onclick="x()">P</a>'), 'alc-footer'), false, 'footer: an event handler makes the value invalid');
+$eq(str_contains($footer('Made by <a href="https://example.com/">Fero</a> &amp; co'), '<div class="alc-footer">Made by <a href="https://example.com/">Fero</a> &amp; co</div>'), true, 'footer: a plain footer is printed as rebuilt');
+$eq(Log::$entries !== [], true, 'footer: the refused value is logged');
+Log::$entries = [];
+
 $app = new FakeApp('site', true, ['option' => 'com_login'], 'cassiopeia', $loginHtml);
 $run($plugin($app, $params));
 $eq([$app->doc->wa->styles, $app->body], [[], $loginHtml], 'frontend: nothing');
@@ -240,6 +265,45 @@ $data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' =
 $plugin($app, [])->prepareAdminForm($form($data));
 $eq($app->messages, [['warning', 'PLG_SYSTEM_FGADMINCUSTOM_REPLACED_PLUGIN_ENABLED|System - FG Admin Login Customizer']], 'form: warns about the enabled old login plugin');
 PluginHelper::$enabled = [];
+
+// duplicate warning: the settings page and the page hook say it once in one request, in either order
+PH::$enabled = ['system/fgadminlogincustom'];
+$app = $formApp();
+$pl  = $plugin($app, []);
+$pl->prepareAdminForm($form((object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => []]));
+$pl->announce(new Event('onAfterDispatch'));
+$eq(\count($app->messages), 1, 'warning: form first, then the page hook - once');
+$app->messages = [];
+$pl->announce(new Event('onAfterDispatch'));
+$eq($app->messages, [], 'warning: the next page of the session is quiet (state recorded although the form warned)');
+$app = $formApp();
+$pl  = $plugin($app, []);
+$pl->announce(new Event('onAfterDispatch'));
+$pl->prepareAdminForm($form((object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => []]));
+$eq(\count($app->messages), 1, 'warning: page hook first, then the form - once');
+$app->messages = [];
+$pl->prepareAdminForm($form((object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => []]));
+$eq(\count($app->messages), 0, 'warning: the same request does not warn again');
+$app = $formApp();
+$plugin($app, [])->prepareAdminForm($form((object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => []]));
+$eq(\count($app->messages), 1, 'warning: the form of a later request warns again (as before)');
+PH::$enabled = [];
+
+// a stored footer the filter refuses is reported on the settings page
+$app  = $formApp();
+$data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => ['login_footer_text' => '<script>x()</script>']];
+$plugin($app, [])->prepareAdminForm($form($data));
+$eq(array_column($app->messages, 1), ['PLG_SYSTEM_FGADMINCUSTOM_FOOTER_REJECTED'], 'form: warns about a refused footer');
+$app  = $formApp();
+$data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => ['login_footer_text' => 'by <a href="https://example.com/">me</a>']];
+$plugin($app, [])->prepareAdminForm($form($data));
+$eq($app->messages, [], 'form: no warning for a valid footer');
+
+// a pasted import beats a theme preset chosen in the same save
+$app  = $formApp();
+$data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => ['login_theme_preset' => 'dark', 'import_json' => json_encode(['_schema' => 'fgadmincustom/1', 'login_card_bg' => '#123456'])]];
+$plugin($app, [])->prepareAdminForm($form($data));
+$eq([$data->params['login_card_bg'] ?? null, $data->params['login_theme_preset'] ?? null], ['#123456', ''], 'form: import wins over the preset, and the preset is cleared');
 
 // another administrator template: the form says the plugin does nothing there
 $app  = new FakeApp('administrator', false, ['option' => 'com_plugins'], 'othertemplate');

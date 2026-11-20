@@ -29,6 +29,16 @@ namespace Joomla\CMS\Installer {
 }
 
 namespace Joomla\CMS {
+    class Version
+    {
+        public static string $short = '5.4.11';
+
+        public function getShortVersion(): string
+        {
+            return self::$short;
+        }
+    }
+
     use Joomla\Database\DatabaseInterface;
 
     class FakeLang

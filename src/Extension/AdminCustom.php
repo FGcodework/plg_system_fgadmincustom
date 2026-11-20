@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.5
+ * @version     1.0.6
  * @license     GNU General Public License version 2 or later
  *
  * Visual customization of the Joomla administrator (Atum template, Joomla 5/6)
@@ -22,6 +22,7 @@ namespace FG\Plugin\System\AdminCustom\Extension;
 use FG\Plugin\System\AdminCustom\Admin\CssBuilder as AdminCssBuilder;
 use FG\Plugin\System\AdminCustom\Admin\LogoReplacer;
 use FG\Plugin\System\AdminCustom\Admin\MenuScript;
+use FG\Plugin\System\AdminCustom\Helper\FooterSanitizer;
 use FG\Plugin\System\AdminCustom\Helper\ImportExport;
 use FG\Plugin\System\AdminCustom\Helper\LegacyMapper;
 use FG\Plugin\System\AdminCustom\Helper\MediaUrl;
@@ -46,7 +47,7 @@ use Joomla\Event\SubscriberInterface;
 final class AdminCustom extends CMSPlugin implements SubscriberInterface
 {
     /** Shown in the generated CSS comment. */
-    public const VERSION = '1.0.5';
+    public const VERSION = '1.0.6';
 
     /** Value of the "schema" marker in the settings export. */
     public const EXPORT_SCHEMA = 'fgadmincustom/1';
@@ -59,6 +60,9 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
 
     /** Session key: elements of the replaced plugins the administrator was already warned about. */
     private const WARNED_STATE = 'plg_system_fgadmincustom.warned';
+
+    /** @var string[] Replaced plugins already warned about in THIS request (the form and the page hook both warn). */
+    private array $warnedNow = [];
 
     /** Elements of the plugins this one replaces; both together with this one would style everything twice. */
     private const REPLACED_PLUGINS = [
@@ -101,7 +105,8 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
         if ($identity === null || $identity->guest) {
             $option = $app->getInput()->getCmd('option', '');
 
-            return $option === '' || $option === 'com_login' ? self::CONTEXT_LOGIN : null;
+            // The login rules are written against the Atum login page and do nothing useful elsewhere.
+            return ($option === '' || $option === 'com_login') && $this->adminTemplate($app) !== null ? self::CONTEXT_LOGIN : null;
         }
 
         if ($app->getInput()->getCmd('tmpl', '') === 'component') {
@@ -248,11 +253,18 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
         $new    = [];
 
         foreach (self::REPLACED_PLUGINS as $replaced => $name) {
-            if (!\in_array($replaced, $warned, true) && PluginHelper::isEnabled('system', $replaced)) {
+            if (\in_array($replaced, $warned, true) || !PluginHelper::isEnabled('system', $replaced)) {
+                continue;
+            }
+
+            // The settings page may have said it already in this very request.
+            if (!\in_array($replaced, $this->warnedNow, true)) {
                 $this->loadLanguage();
                 $app->enqueueMessage(Text::sprintf('PLG_SYSTEM_FGADMINCUSTOM_REPLACED_PLUGIN_ENABLED', $name), 'warning');
-                $new[] = $replaced;
+                $this->warnedNow[] = $replaced;
             }
+
+            $new[] = $replaced;
         }
 
         if ($new !== []) {
@@ -262,11 +274,22 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
 
     private function warnReplacedPluginsEnabled(CMSApplicationInterface $app): void
     {
+        // On this page every time - but not twice in one request, which announce() would otherwise do.
         foreach (self::REPLACED_PLUGINS as $replaced => $name) {
-            if (PluginHelper::isEnabled('system', $replaced)) {
+            if (!\in_array($replaced, $this->warnedNow, true) && PluginHelper::isEnabled('system', $replaced)) {
                 $app->enqueueMessage(Text::sprintf('PLG_SYSTEM_FGADMINCUSTOM_REPLACED_PLUGIN_ENABLED', $name), 'warning');
+                $this->warnedNow[] = $replaced;
             }
         }
+    }
+
+    /**
+     * "<" never occurs in the CSS this plugin builds or in a stylesheet worth writing; as
+     * the CSS escape \3c it cannot close the <style> element (</style><script>...).
+     */
+    private static function styleSafe(string $css): string
+    {
+        return str_replace('<', '\\3c ', $css);
     }
 
     private function injectLogin(HtmlDocument $doc): void
@@ -276,7 +299,7 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
 
         if ($css !== '') {
             $wa->addInlineStyle(
-                '/* FG Admin Customizer ' . self::VERSION . " - login */\n" . $css,
+                '/* FG Admin Customizer ' . self::VERSION . " - login */\n" . self::styleSafe($css),
                 ['name' => 'plg.system.fgadmincustom.login']
             );
         }
@@ -284,7 +307,9 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
         $js = trim((string) $this->params->get('login_custom_js', ''));
 
         if ($js !== '') {
-            $wa->addInlineScript($js, ['name' => 'plg.system.fgadmincustom.login.js'], ['defer' => true]);
+            // Printed in the page head, so it runs before the page body exists (an inline script
+            // cannot be deferred): code that touches the page waits for DOMContentLoaded itself.
+            $wa->addInlineScript($js, ['name' => 'plg.system.fgadmincustom.login.js']);
         }
     }
 
@@ -295,7 +320,7 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
 
         if ($css !== '') {
             $wa->addInlineStyle(
-                '/* FG Admin Customizer ' . self::VERSION . " - admin */\n" . $css,
+                '/* FG Admin Customizer ' . self::VERSION . " - admin */\n" . self::styleSafe($css),
                 ['name' => 'plg.system.fgadmincustom.admin']
             );
         }
@@ -334,7 +359,7 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
                     $body,
                     MediaUrl::clean((string) $this->params->get('login_logo', '')),
                     MediaUrl::clean((string) $this->params->get('login_logo_dark', '')),
-                    trim((string) $this->params->get('login_footer_text', ''))
+                    $this->footer()
                 );
             } else {
                 $logos = [
@@ -353,6 +378,30 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
         } catch (\Throwable $e) {
             $this->fail($e);
         }
+    }
+
+    /**
+     * The footer HTML of the login page as the allowlist sanitizer rebuilds it. Typed into
+     * the field or imported, it goes through the same filter before it is printed; a value
+     * the filter refuses is not printed at all (the settings page says so).
+     */
+    private function footer(): string
+    {
+        $raw = trim((string) $this->params->get('login_footer_text', ''));
+
+        if ($raw === '') {
+            return '';
+        }
+
+        $clean = FooterSanitizer::sanitize($raw);
+
+        if ($clean === null) {
+            $this->fail(new \RuntimeException('The footer text of the login page contains markup that is not allowed and is not shown'));
+
+            return '';
+        }
+
+        return $clean;
     }
 
     // ----------------------------------------------------------------------
@@ -422,6 +471,13 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
 
         $paramsData = $isDataArray ? ($data['params'] ?? null) : ($data->params ?? null);
         $params     = ImportExport::paramsToArray($paramsData);
+
+        // A footer the allowlist filter refuses is not printed on the login page.
+        $storedFooter = trim((string) ($params['login_footer_text'] ?? ''));
+
+        if ($storedFooter !== '' && FooterSanitizer::sanitize($storedFooter) === null) {
+            $app->enqueueMessage(Text::_('PLG_SYSTEM_FGADMINCUSTOM_FOOTER_REJECTED'), 'warning');
+        }
 
         // ------------------------------------------------------------------
         // Export: always reflect the currently stored settings.
@@ -514,8 +570,8 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
         }
 
         // Only this plugin's own settings are accepted, each one validated.
-        $result   = SettingsSanitizer::sanitize($imported);
-        $updates += $result['values'];
+        $result  = SettingsSanitizer::sanitize($imported);
+        $updates = $result['values'] + $updates;   // what was pasted beats a preset chosen in the same save
 
         $app->enqueueMessage(Text::_('PLG_SYSTEM_FGADMINCUSTOM_IMPORT_APPLIED'), 'message');
 

@@ -1,5 +1,19 @@
 # Changelog - plg_system_fgadmincustom
 
+## 1.0.6 (2026-11-20)
+- FIX: when the login logo falls back to the login box, a file name containing `$1`, `$0` or a backslash is inserted literally (the fallback used a replacement string; the footer and the header logos already were safe).
+- FIX: the header logos of the administrator are found by the Atum markup (the images inside the element with the class `logo` of `<header id="header">`), not by the word "logo" anywhere in the tag. A custom Atum logo whose file name does not contain "logo" is replaced as well, and `alt`/`title` texts, an avatar or an icon are never touched. The fallback to "the first two images of any header" is gone.
+- FIX: `</style>` in Custom CSS can no longer end the style block: `<` is written as the CSS escape `\3c `.
+- FIX: the footer text goes through the allowlist filter when it is printed, not only on an import. A footer the filter refuses is not printed, is logged, and the settings page shows a warning (new string `FOOTER_REJECTED`). The field description lists what is allowed.
+- FIX: the warning about an enabled FG Admin Login/Page Customizer is shown once on the settings page, not twice (form and page hook share what was said in the request).
+- FIX: an import pasted together with a theme preset chosen in the same save wins over the preset.
+- FIX: the login rules are applied only when the administrator template is Atum (the logged-in part already was).
+- FIX: the read-only Export JSON is no longer stored in the plugin parameters (`filter="unset"`); it is rebuilt every time the form opens. A save shrinks the stored parameters from about 3.4 KB to 1.4 KB.
+- FIX: Custom JavaScript no longer pretends to be deferred. It is an inline script in the head and runs before the form exists; the description and README say so.
+- NEW: the installer checks PHP 8.1 and Joomla 5 before it installs anything and says why it refuses (new strings `REQUIREMENT_PHP`, `REQUIREMENT_JOOMLA`).
+- README: who can add code to the login page (Joomla's Plugins permission), the footer rules, why the recovery switch has no token.
+- Tests: form ranges against the schema (and the login overrides of Brand), the logo replacer on real Atum markup, footer and `</style>` at render time, the duplicate warning in both orders, import against preset, the installer requirements. The golden test compares the header logos only on Atum-like markup (the old plugin's looser guess is exactly what changed).
+
 ## 1.0.5 (2026-11-20)
 - NEW: the plugin's settings page shows a notice when the administrator template in use is not Atum (or a child of Atum). The plugin only works with Atum and used to stay silent on any other template. New string `NOT_ATUM`.
 - README: how Custom CSS/JavaScript are emitted (Joomla's asset manager, so CSP nonces apply), that they are off while empty, that changes appear in Joomla's User Actions Log, and how to scope your own CSS.

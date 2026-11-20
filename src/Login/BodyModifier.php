@@ -59,9 +59,10 @@ final class BodyModifier
 
             // Fallback: prepend the logo into the login box.
             if ($count === 0) {
-                $newBody = preg_replace(
-                    '#(<div\b[^>]*class="[^"]*\blogin\b[^"]*"[^>]*>)#',
-                    '$1<div class="alc-logo">' . $img . '</div>',
+                // A callback, not a replacement string: "$1" or "\0" in a file name must stay text.
+                $newBody = preg_replace_callback(
+                    '#<div\b[^>]*class="[^"]*\blogin\b[^"]*"[^>]*>#',
+                    static fn (array $m): string => $m[0] . '<div class="alc-logo">' . $img . '</div>',
                     $body,
                     1,
                     $count
@@ -83,12 +84,8 @@ final class BodyModifier
             // (.login form ~ .text-center) cannot hide it.
             $html = '<div class="alc-footer">' . $footer . '</div>';
 
-            // Escape backslashes and dollar signs so the admin-entered HTML
-            // cannot act as backreferences in the replacement string.
-            $replacement = strtr($html, ['\\' => '\\\\', '$' => '\\$']);
-
             $count   = 0;
-            $newBody = preg_replace('#(</form>)#', '$1' . $replacement, $body, 1, $count);
+            $newBody = preg_replace_callback('#</form>#', static fn (array $m): string => $m[0] . $html, $body, 1, $count);
 
             if ($count > 0 && \is_string($newBody)) {
                 $body    = $newBody;

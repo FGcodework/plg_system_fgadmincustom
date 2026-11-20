@@ -314,6 +314,8 @@ $out = (string) BM::apply($page, '/a.png', '/d.png', '');
 $eq(str_contains($out, 'alc-logo-light') && str_contains($out, 'alc-logo-dark'), true, 'body dark logo pair');
 $out = (string) BM::apply($page, '', '/d.png', '');
 $eq(str_contains($out, '/d.png') && !str_contains($out, 'alc-logo-dark'), true, 'body only dark logo used for all schemes');
+$out = (string) BM::apply('<div class="login"><form></form></div>', '/a$1b\\0$0.png', '', '');
+$eq(str_contains($out, 'src="/a$1b\\0$0.png"'), true, 'logo fallback: $ and \\ in the URL stay text');
 $out = (string) BM::apply('<div class="login"><form></form></div>', '/a.png', '', '');
 $eq(str_contains($out, '<div class="alc-logo">'), true, 'body logo fallback prepended');
 $out = (string) BM::apply('<form></form>', '', '', 'Made by $1 \\2');
@@ -341,10 +343,23 @@ $out   = L::replace('<header id="header"><div class="logo"><img src="a.svg" clas
 $eq(substr_count((string) $out, '/m/big.png'), 1, 'logo expanded');
 $eq(substr_count((string) $out, '/m/small.png'), 1, 'logo collapsed');
 $eq(str_contains((string) $out, '/avatar.png') && str_contains((string) $out, '/x/logo.png'), true, 'logo leaves other images');
-$eq(str_contains((string) L::replace('<header><img class="logo-large" src="a.svg" srcset="a.svg 1x"><img class="logo-small" src="b.svg"></header>', $logos), 'srcset'), false, 'logo srcset removed');
+$eq(str_contains((string) L::replace('<header id="header"><img class="logo-large" src="a.svg" srcset="a.svg 1x"><img class="logo-small" src="b.svg"></header>', $logos), 'srcset'), false, 'logo srcset removed');
 $eq(L::replace('<main><img src="/logo.png"></main>', $logos), null, 'logo no header');
 $eq(L::replace('<header>no images</header>', $logos), null, 'logo no images');
-$eq(str_contains((string) L::replace('<header><img src="logo.png"></header>', ['expanded' => '/a$1\\b.png', 'collapsed' => '']), '/a$1\\b.png'), true, 'logo special chars literal');
+$eq(str_contains((string) L::replace('<header id="header"><img src="logo.png"></header>', ['expanded' => '/a$1\\b.png', 'collapsed' => '']), '/a$1\\b.png'), true, 'logo special chars literal');
+
+// the real Atum 5 header: neither large image nor its URL needs to say "logo" (a custom Atum logo does not)
+$atum = '<header id="header" class="header"><div class="header-inside"><div class="logo "><img loading="eager" src="/administrator/images/brand.png" alt="">'
+    . '<img class="logo-collapsed" loading="eager" src="/administrator/images/brand-small.png" alt=""></div><img src="/avatar.png" alt="Logout"></div></header>';
+$out  = (string) L::replace($atum, $logos);
+$eq([substr_count($out, '/m/big.png'), substr_count($out, '/m/small.png'), str_contains($out, '/avatar.png'), str_contains($out, 'brand.png')], [1, 1, true, false], 'logo: Atum markup, custom logo URLs without "logo" in them');
+$eq(str_contains((string) L::replace('<header id="header"><div class="logo"><a href="/"><img src="x.png"><img class="logo-collapsed" src="y.png"></a></div></header>', $logos), '/m/small.png'), true, 'logo: images wrapped in a link');
+$a = '<header id="header"><a class="logo small" href="/"><img src="x.png" alt="Logout"><img src="y.png"></a><div class="header-item"><img src="/avatar.png"><img src="/icon.png"></div></header>';
+$o = (string) L::replace($a, $logos);
+$eq([substr_count($o, '/m/big.png'), substr_count($o, '/m/small.png'), str_contains($o, '/avatar.png') && str_contains($o, '/icon.png')], [1, 1, true], 'logo: the first two images of the header are not touched unless they are in the logo element');
+$eq(L::replace('<header id="header"><img src="/avatar.png" alt="Catalogue logout"><img src="/icon.png" title="logo"></header>', $logos), null, 'logo: the words in alt/title do not make a logo');
+$eq(L::replace('<header><div class="logo"><img src="a.svg"></div></header>', $logos), null, 'logo: only the Atum header (id="header") is looked at');
+$eq(str_contains((string) L::replace('<header class="x"></header><header id="header"><div class="logo"><img src="a.svg"></div></header>', $logos), '/m/big.png'), true, 'logo: another <header> before it does not matter');
 
 // ------------------------------------------------------------------- Admin CssBuilder
 $eq((new AdminCss(new Registry([])))->build(), '', 'admin css empty');

@@ -109,8 +109,8 @@ $loginBodies = [
 ];
 $adminBodies = [
     '<header id="header"><div class="logo"><img src="a.svg" class="logo" alt=""><img src="b.svg" class="logo-collapsed"></div></header><main></main>',
-    '<header><img class="logo-large" src="a.svg" srcset="a.svg 1x"><img class="logo-small" src="b.svg"></header>',
-    '<header><a href="/"><img src="/a.svg"></a><img src="/b.svg"><img src="/avatar.png"></header>',
+    '<header id="header"><img class="logo-large" src="a.svg" srcset="a.svg 1x"><img class="logo-small" src="b.svg"></header>',
+    '<header id="header" class="header"><div class="logo small"><img src="/x/logo.svg"><img class="logo-collapsed" src="/x/logo-s.svg"></div><img src="/avatar.png"></header>',
 ];
 
 $stats    = ['login' => 0, 'admin' => 0, 'body' => 0, 'isolated' => 0, 'generator' => 0, 'skipped' => 0];

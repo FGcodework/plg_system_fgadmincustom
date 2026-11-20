@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.5
+ * @version     1.0.6
  * @license     GNU General Public License version 2 or later
  *
  * Turns the stored settings into the plain-key Registry one context's CSS
@@ -42,7 +42,7 @@ final class StyleContext
 
         if ((int) $params->get('login_use_brand', 1) !== 0) {
             foreach (Schema::BRAND as $key) {
-                if (self::hasValue($out[$key] ?? null, $key)) {
+                if (self::hasValue($out[$key] ?? null)) {
                     continue;
                 }
 
@@ -129,7 +129,7 @@ final class StyleContext
      *
      * @param mixed $value
      */
-    private static function hasValue($value, string $key): bool
+    private static function hasValue($value): bool
     {
         return $value !== null && trim((string) (\is_scalar($value) ? $value : '')) !== '';
     }

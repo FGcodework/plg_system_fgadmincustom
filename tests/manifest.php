@@ -127,8 +127,33 @@ foreach ($names as $name => $field) {
     }
 }
 
-$ok((string) $xml->version === '1.0.5', 'version 1.0.5');
+$ok((string) $xml->version === '1.0.6', 'version 1.0.6');
 $ok((string) $xml->scriptfile === 'script.php' && is_file($root . '/script.php'), 'script file present');
+
+// Every number range in the form is the range the schema validates an import with, and the one the
+// login overrides of the Brand settings use: one place changes, the other must follow.
+$fields = Schema::fields();
+
+foreach ($names as $name => $field) {
+    if ((string) $field['type'] !== 'number' || !isset($field['min'], $field['max'])) {
+        continue;
+    }
+
+    $rule = $fields[$name] ?? null;
+    $ok($rule !== null && $rule[0] === 'range' && [$rule[1], $rule[2]] === [(int) $field['min'], (int) $field['max']], "range of $name: form min/max = Schema::fields()");
+}
+
+foreach (Schema::BRAND_KIND as $key => $kind) {
+    if (!\is_array($kind)) {
+        continue;
+    }
+
+    // The login override of a Brand radius: the form field and the schema must agree on it.
+    $field = $names['login_' . $key] ?? null;
+    $ok($field !== null && [(int) $field['min'], (int) $field['max']] === $kind, "BRAND_KIND range of $key = the form field login_$key");
+    $rule = $fields['login_' . $key] ?? null;
+    $ok($rule !== null && [$rule[1], $rule[2]] === $kind, "BRAND_KIND range of $key = Schema::fields() of login_$key");
+}
 
 // The recovery link is shown by default (the old login plugin hid it); migration keeps the old behaviour.
 $ok($xml->xpath('//field[@name="login_hide_forgot"]')[0]['default'] . '' === '0', 'login_hide_forgot is off by default');

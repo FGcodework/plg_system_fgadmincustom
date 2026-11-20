@@ -92,7 +92,7 @@ the old behaviour (hidden) unless they had saved the option as off.
 
 ## Footer text
 
-The login footer accepts simple HTML: links (`http`, `https`, `mailto`, `tel` or relative), `strong`, `em`, `b`, `i`, `u`, `small`, `span`, `div`, `p`, `br`, `hr`, lists, `sub`/`sup`, `abbr` and `img`, with the attributes `class`, `title` and the link/image attributes. When settings are imported, anything else (scripts, inline `style`, event handlers, frames, forms ...) makes the footer invalid and it is skipped with a warning; style it with a `class` and the Custom CSS field instead. Links opened in a new tab automatically get `rel="noopener"`.
+The login footer accepts simple HTML: links (`http`, `https`, `mailto`, `tel` or relative), `strong`, `em`, `b`, `i`, `u`, `small`, `span`, `div`, `p`, `br`, `hr`, lists, `sub`/`sup`, `abbr` and `img`, with the attributes `class`, `title` and the link/image attributes. Anything else (scripts, inline `style`, an `id`, event handlers, frames, forms ...) makes the footer invalid. The check runs on an import and again whenever the login page is printed, so a footer typed into the field is held to the same rules: an invalid footer is not shown, and the settings page says so. Style the footer with a `class` and the Custom CSS field instead. Links opened in a new tab automatically get `rel="noopener"`.
 
 ## Recovery switch
 
@@ -101,7 +101,7 @@ If a custom rule ever breaks a page, add `?fgac=off`:
 - **Login page**: `/administrator?fgac=off` skips every customization for that request.
 - **Logged in**: any back-end URL with `?fgac=off` switches the customization off for the whole session; `?fgac=on` switches it back.
 
-Nothing is saved or changed by the switch.
+Nothing is saved or changed by the switch. It is a plain link without a token on purpose: it has to work when you cannot sign in, and all it does is show the page without the plugin.
 
 ## A note on Custom CSS and JavaScript
 
@@ -113,6 +113,10 @@ changed the plugin and when is recorded by Joomla's User Actions Log (plugins ar
 logged by default). The login page rules are scoped with `.view-login` and
 `body.com_login`; write your own CSS the same way so that it cannot leak into the
 logged-in administrator.
+
+The Custom JavaScript is printed in the page head (an inline script cannot be deferred), so it runs before the login form exists: wrap code that touches the page in a `DOMContentLoaded` listener.
+
+Anyone who may edit plugins (Joomla permission *Edit* for Plugins) can type code into these fields that runs on the login page, next to the password input. Keep that permission to people you would trust with a template file; Joomla's Administrator group has it by default, so restrict it under *Users - Permissions* if that is not what you want.
 
 The **Custom JavaScript** field runs on the administrator login page - the
 page that carries the username and password inputs. Treat it like editing a

@@ -6,7 +6,7 @@
     <creationDate>2026-11</creationDate>
     <copyright>(C) 2026. GNU GPL v2 or later.</copyright>
     <license>GNU General Public License version 2 or later</license>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
     <description>PLG_SYSTEM_FGADMINCUSTOM_XML_DESCRIPTION</description>
     <namespace path="src">FG\Plugin\System\AdminCustom</namespace>
     <scriptfile>script.php</scriptfile>
@@ -173,7 +173,7 @@
                 <field name="login_custom_js" type="textarea" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CUSTOM_JS_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CUSTOM_JS_DESC" rows="12" filter="raw" />
             </fieldset>
             <fieldset name="importexport" label="PLG_SYSTEM_FGADMINCUSTOM_FIELDSET_IMPORTEXPORT">
-                <field name="export_json" type="textarea" label="PLG_SYSTEM_FGADMINCUSTOM_EXPORT_JSON_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_EXPORT_JSON_DESC" rows="10" readonly="true" filter="raw" />
+                <field name="export_json" type="textarea" label="PLG_SYSTEM_FGADMINCUSTOM_EXPORT_JSON_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_EXPORT_JSON_DESC" rows="10" readonly="true" filter="unset" />
                 <field name="import_json" type="textarea" label="PLG_SYSTEM_FGADMINCUSTOM_IMPORT_JSON_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_IMPORT_JSON_DESC" rows="10" filter="raw" />
             </fieldset>
         </fields>

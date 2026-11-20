@@ -229,6 +229,18 @@ $db->rows       = ['fgadmincustom' => $row('fgadmincustom', $newDefaults, 0)];
 [$ok, $msgs]    = $run($db);
 $eq($db->log, [], 'nothing to migrate: no transaction opened');
 
+// ---- requirements: checked before anything is installed
+$script = static fn () => (static fn () => include __DIR__ . '/../script.php')();
+Factory::$app = new FakeApplication();
+$eq($script()->preflight('install', new InstallerAdapter()), true, 'preflight: Joomla 5.4 passes');
+\Joomla\CMS\Version::$short = '4.4.9';
+Factory::$app = new FakeApplication();
+$eq([$script()->preflight('install', new InstallerAdapter()), array_column(Factory::$app->messages, 0), str_contains(implode(' ', array_column(Factory::$app->messages, 1)), 'Joomla 5')], [false, ['error'], true], 'preflight: Joomla 4 is refused with an error message');
+\Joomla\CMS\Version::$short = '6.0.1';
+Factory::$app = new FakeApplication();
+$eq($script()->preflight('update', new InstallerAdapter()), true, 'preflight: Joomla 6 passes');
+\Joomla\CMS\Version::$short = '5.4.11';
+
 // ---- language files are loaded before messages are built
 $run($fresh());
 $eq(\count(Factory::$app->lang->loaded) >= 2, true, 'language files requested');

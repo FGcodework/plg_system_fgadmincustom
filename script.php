@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.5
+ * @version     1.0.6
  * @license     GNU General Public License version 2 or later
  *
  * Install script. On a fresh installation it takes over the settings of the
@@ -21,6 +21,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerAdapter;
 use Joomla\CMS\Installer\InstallerScriptInterface;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Version;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 
@@ -37,6 +38,9 @@ return new class () implements InstallerScriptInterface {
     private const ELEMENT = 'fgadmincustom';
     private const LOGIN   = 'fgadminlogincustom';
     private const PAGE    = 'fgadminpagecustom';
+
+    private const MIN_PHP          = '8.1.0';
+    private const MIN_JOOMLA       = '5';
 
     public function install(InstallerAdapter $adapter): bool
     {
@@ -55,6 +59,30 @@ return new class () implements InstallerScriptInterface {
 
     public function preflight(string $type, InstallerAdapter $adapter): bool
     {
+        if (version_compare(PHP_VERSION, self::MIN_PHP, '<')) {
+            $this->message(
+                'PLG_SYSTEM_FGADMINCUSTOM_REQUIREMENT_PHP',
+                'FG Admin Customizer needs PHP %s or newer; this server runs PHP %s. Nothing was installed.',
+                'error',
+                [self::MIN_PHP, PHP_VERSION]
+            );
+
+            return false;
+        }
+
+        $joomla = (new Version())->getShortVersion();
+
+        if (version_compare($joomla, self::MIN_JOOMLA . '.0.0', '<')) {
+            $this->message(
+                'PLG_SYSTEM_FGADMINCUSTOM_REQUIREMENT_JOOMLA',
+                'FG Admin Customizer is written for Joomla %s and newer; this site runs Joomla %s. Nothing was installed.',
+                'error',
+                [self::MIN_JOOMLA, $joomla]
+            );
+
+            return false;
+        }
+
         return true;
     }
 
