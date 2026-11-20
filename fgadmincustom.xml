@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" group="system" method="upgrade">
+    <name>plg_system_fgadmincustom</name>
+    <author>Fero</author>
+    <authorUrl>https://github.com/FGcodework</authorUrl>
+    <creationDate>2026-11</creationDate>
+    <copyright>(C) 2026. GNU GPL v2 or later.</copyright>
+    <license>GNU General Public License version 2 or later</license>
+    <version>1.0.0</version>
+    <description>PLG_SYSTEM_FGADMINCUSTOM_XML_DESCRIPTION</description>
+    <namespace path="src">FG\Plugin\System\AdminCustom</namespace>
+    <scriptfile>script.php</scriptfile>
+    <updateservers>
+        <server type="extension" name="System - FG Admin Customizer Update Site">https://raw.githubusercontent.com/FGcodework/plg_system_fgadmincustom/master/updates.xml</server>
+    </updateservers>
+    <files>
+        <folder plugin="fgadmincustom">services</folder>
+        <folder>src</folder>
+        <folder>language</folder>
+        <filename>script.php</filename>
+    </files>
+    <languages>
+        <language tag="en-GB">language/en-GB/plg_system_fgadmincustom.ini</language>
+        <language tag="en-GB">language/en-GB/plg_system_fgadmincustom.sys.ini</language>
+        <language tag="sk-SK">language/sk-SK/plg_system_fgadmincustom.ini</language>
+        <language tag="sk-SK">language/sk-SK/plg_system_fgadmincustom.sys.ini</language>
+    </languages>
+    <config>
+        <inlinehelp button="show" />
+        <fields name="params">
+            <fieldset name="basic">
+                <field name="support_note" type="note" description="PLG_SYSTEM_FGADMINCUSTOM_FIELD_SUPPORT_DESC" />
+            </fieldset>
+            <fieldset name="brand" label="PLG_SYSTEM_FGADMINCUSTOM_FIELDSET_BRAND">
+                <field name="brand_color" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_BRAND_COLOR_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_BRAND_COLOR_DESC" />
+                <field name="ctrl_radius" type="number" label="PLG_SYSTEM_FGADMINCUSTOM_BRAND_CTRL_RADIUS_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_BRAND_CTRL_RADIUS_DESC" default="" min="0" max="40" />
+                <field name="card_radius" type="number" label="PLG_SYSTEM_FGADMINCUSTOM_BRAND_CARD_RADIUS_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_BRAND_CARD_RADIUS_DESC" default="" min="0" max="40" />
+                <field name="btn_shadow" type="list" label="PLG_SYSTEM_FGADMINCUSTOM_BRAND_BTN_SHADOW_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_BRAND_BTN_SHADOW_DESC" default="none">
+                    <option value="none">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_NONE</option>
+                    <option value="subtle">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_SUBTLE</option>
+                    <option value="medium">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_MEDIUM</option>
+                    <option value="strong">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_STRONG</option>
+                </field>
+                <field name="card_shadow" type="list" label="PLG_SYSTEM_FGADMINCUSTOM_BRAND_CARD_SHADOW_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_BRAND_CARD_SHADOW_DESC" default="none">
+                    <option value="none">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_NONE</option>
+                    <option value="subtle">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_SUBTLE</option>
+                    <option value="medium">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_MEDIUM</option>
+                    <option value="strong">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_STRONG</option>
+                </field>
+            </fieldset>
+            <fieldset name="admin" label="PLG_SYSTEM_FGADMINCUSTOM_FIELDSET_ADMIN">
+                <field name="admin_enabled" type="radio" label="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_ENABLED_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_ENABLED_DESC" layout="joomla.form.field.radio.switcher" default="1">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="admin_header_color" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_HEADER_COLOR_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_HEADER_COLOR_DESC" />
+                <field name="admin_sidebar_follow" type="radio" layout="joomla.form.field.radio.switcher" default="1" label="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_SIDEBAR_FOLLOW_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_SIDEBAR_FOLLOW_DESC">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="admin_sidebar_color" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_SIDEBAR_COLOR_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_SIDEBAR_COLOR_DESC" />
+                <field name="admin_page_bg" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_PAGE_BG_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_PAGE_BG_DESC" />
+                <field name="admin_logo" type="media" label="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_LOGO_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_LOGO_DESC" />
+                <field name="admin_logo_small" type="media" label="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_LOGO_SMALL_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_LOGO_SMALL_DESC" />
+                <field name="admin_logo_height" type="number" label="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_LOGO_HEIGHT_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_LOGO_HEIGHT_DESC" min="16" max="120" />
+            </fieldset>
+            <fieldset name="behavior" label="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_FIELDSET_BEHAVIOR">
+                <field name="admin_menu_open_first" type="radio" layout="joomla.form.field.radio.switcher" default="0" label="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_MENU_OPEN_FIRST_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_ADMIN_MENU_OPEN_FIRST_DESC">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+            </fieldset>
+            <fieldset name="login_logo" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_FIELDSET_LOGO">
+                <field name="login_enabled" type="radio" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_ENABLED_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_ENABLED_DESC" layout="joomla.form.field.radio.switcher" default="1">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="login_logo" type="media" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_LOGO_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_LOGO_DESC" />
+                <field name="login_logo_dark" type="media" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_LOGO_DARK_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_LOGO_DARK_DESC" />
+                <field name="login_logo_width" type="number" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_LOGO_WIDTH_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_LOGO_WIDTH_DESC" default="220" min="40" max="800" />
+                <field name="login_logo_height" type="number" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_LOGO_HEIGHT_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_LOGO_HEIGHT_DESC" min="20" max="600" />
+                <field name="login_logo_fit" type="list" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_LOGO_FIT_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_LOGO_FIT_DESC" default="contain">
+                    <option value="contain">PLG_SYSTEM_FGADMINCUSTOM_LOGIN_LOGO_FIT_CONTAIN</option>
+                    <option value="cover">PLG_SYSTEM_FGADMINCUSTOM_LOGIN_LOGO_FIT_COVER</option>
+                </field>
+                <field name="login_hide_template_logo" type="radio" layout="joomla.form.field.radio.switcher" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_TEMPLATE_LOGO_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_TEMPLATE_LOGO_DESC" default="1">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="login_hide_sidebar" type="radio" layout="joomla.form.field.radio.switcher" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_SIDEBAR_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_SIDEBAR_DESC" default="1">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="login_hide_forgot" type="radio" layout="joomla.form.field.radio.switcher" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_FORGOT_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_FORGOT_DESC" default="1">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="login_footer_text" type="textarea" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_FOOTER_TEXT_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_FOOTER_TEXT_DESC" rows="3" filter="raw" />
+                <field name="login_hide_chrome" type="radio" layout="joomla.form.field.radio.switcher" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_CHROME_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_CHROME_DESC" default="0">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+            </fieldset>
+            <fieldset name="login_preset" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_FIELDSET_PRESET">
+                <field name="login_theme_preset" type="list" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_THEME_PRESET_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_THEME_PRESET_DESC" default="">
+                    <option value="">PLG_SYSTEM_FGADMINCUSTOM_LOGIN_THEME_PRESET_NONE</option>
+                    <option value="reset">PLG_SYSTEM_FGADMINCUSTOM_LOGIN_THEME_PRESET_RESET</option>
+                    <option value="dark">PLG_SYSTEM_FGADMINCUSTOM_LOGIN_THEME_PRESET_DARK</option>
+                    <option value="corporate_blue">PLG_SYSTEM_FGADMINCUSTOM_LOGIN_THEME_PRESET_CORPORATE_BLUE</option>
+                    <option value="green">PLG_SYSTEM_FGADMINCUSTOM_LOGIN_THEME_PRESET_GREEN</option>
+                    <option value="orange">PLG_SYSTEM_FGADMINCUSTOM_LOGIN_THEME_PRESET_ORANGE</option>
+                    <option value="minimal">PLG_SYSTEM_FGADMINCUSTOM_LOGIN_THEME_PRESET_MINIMAL</option>
+                </field>
+            </fieldset>
+            <fieldset name="login_background" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_FIELDSET_BACKGROUND">
+                <field name="login_bg_type" type="list" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BG_TYPE_LABEL" default="none">
+                    <option value="none">PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BG_TYPE_NONE</option>
+                    <option value="color">PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BG_TYPE_COLOR</option>
+                    <option value="gradient">PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BG_TYPE_GRADIENT</option>
+                    <option value="image">PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BG_TYPE_IMAGE</option>
+                </field>
+                <field name="login_bg_color" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BG_COLOR_LABEL" default="#1c3d5c" showon="login_bg_type:color" />
+                <field name="login_grad_start" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_GRAD_START_LABEL" default="#1c3d5c" showon="login_bg_type:gradient" />
+                <field name="login_grad_end" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_GRAD_END_LABEL" default="#0e1e2e" showon="login_bg_type:gradient" />
+                <field name="login_grad_angle" type="number" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_GRAD_ANGLE_LABEL" default="135" min="0" max="360" showon="login_bg_type:gradient" />
+                <field name="login_bg_image" type="media" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BG_IMAGE_LABEL" showon="login_bg_type:image" />
+                <field name="login_bg_overlay" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BG_OVERLAY_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BG_OVERLAY_DESC" default="#000000" showon="login_bg_type:image" />
+                <field name="login_bg_overlay_opacity" type="number" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BG_OVERLAY_OPACITY_LABEL" default="40" min="0" max="100" showon="login_bg_type:image" />
+            </fieldset>
+            <fieldset name="login_cardstyle" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_FIELDSET_CARD">
+                <field name="login_use_brand" type="radio" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_USE_BRAND_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_USE_BRAND_DESC" layout="joomla.form.field.radio.switcher" default="1">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="login_brand_color" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BRAND_COLOR_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BRAND_COLOR_DESC" />
+                <field name="login_card_bg" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CARD_BG_LABEL" />
+                <field name="login_card_text" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CARD_TEXT_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_AUTO_CONTRAST_DESC" />
+                <field name="login_card_radius" type="number" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CARD_RADIUS_LABEL" default="" min="0" max="60" />
+                <field name="login_card_shadow" type="list" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CARD_SHADOW_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CARD_SHADOW_DESC" default="">
+                    <option value="">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_INHERIT</option>
+                    <option value="none">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_NONE</option>
+                    <option value="subtle">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_SUBTLE</option>
+                    <option value="medium">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_MEDIUM</option>
+                    <option value="strong">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_STRONG</option>
+                </field>
+                <field name="login_ctrl_radius" type="number" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CTRL_RADIUS_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CTRL_RADIUS_DESC" default="" min="0" max="40" />
+                <field name="login_btn_shadow" type="list" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BTN_SHADOW_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BTN_SHADOW_DESC" default="">
+                    <option value="">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_INHERIT</option>
+                    <option value="none">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_NONE</option>
+                    <option value="subtle">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_SUBTLE</option>
+                    <option value="medium">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_MEDIUM</option>
+                    <option value="strong">PLG_SYSTEM_FGADMINCUSTOM_SHADOW_STRONG</option>
+                </field>
+                <field name="login_btn_bg" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BTN_BG_LABEL" />
+                <field name="login_btn_hover" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BTN_HOVER_LABEL" />
+                <field name="login_btn_text" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BTN_TEXT_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_AUTO_CONTRAST_DESC" />
+                <field name="login_link_color" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_LINK_COLOR_LABEL" />
+            </fieldset>
+            <fieldset name="login_headerbar" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_FIELDSET_HEADER">
+                <field name="login_header_bg" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HEADER_BG_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HEADER_BG_DESC" />
+                <field name="login_header_text" type="color" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HEADER_TEXT_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_AUTO_CONTRAST_DESC" />
+                <field name="login_hide_lang_switcher" type="radio" layout="joomla.form.field.radio.switcher" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_LANG_SWITCHER_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HIDE_LANG_SWITCHER_DESC" default="0">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field name="login_header_match_btn" type="radio" layout="joomla.form.field.radio.switcher" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HEADER_MATCH_BTN_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HEADER_MATCH_BTN_DESC" default="0">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+            </fieldset>
+            <fieldset name="login_advanced" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_FIELDSET_ADVANCED">
+                <field name="login_custom_css" type="textarea" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CUSTOM_CSS_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CUSTOM_CSS_DESC" rows="12" filter="raw" />
+                <field name="login_custom_js" type="textarea" label="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CUSTOM_JS_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CUSTOM_JS_DESC" rows="12" filter="raw" />
+            </fieldset>
+            <fieldset name="importexport" label="PLG_SYSTEM_FGADMINCUSTOM_FIELDSET_IMPORTEXPORT">
+                <field name="export_json" type="textarea" label="PLG_SYSTEM_FGADMINCUSTOM_EXPORT_JSON_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_EXPORT_JSON_DESC" rows="10" readonly="true" filter="raw" />
+                <field name="import_json" type="textarea" label="PLG_SYSTEM_FGADMINCUSTOM_IMPORT_JSON_LABEL" description="PLG_SYSTEM_FGADMINCUSTOM_IMPORT_JSON_DESC" rows="10" filter="raw" />
+            </fieldset>
+        </fields>
+    </config>
+</extension>

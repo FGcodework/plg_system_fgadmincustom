@@ -1,0 +1,16 @@
+# Changelog - plg_system_fgadmincustom
+
+## 1.0.0 (2026-11-20)
+First release. FG Admin Customizer is one plugin that replaces **FG Admin Login Customizer** (`plg_system_fgadminlogincustom`) and **FG Admin Page Customizer** (`plg_system_fgadminpagecustom`); it is independent of both and has its own update server.
+
+- NEW: one plugin for the whole administrator - the login page and the logged-in Atum back-end - with a **Brand** tab (brand color, corner radii of fields/buttons and cards, shadow presets) shared by both. The login page inherits the Brand values; each can be overridden there ("Login: Card & colors"), and "Use Brand settings" turns the inheritance off.
+- NEW: separate switches for the login page and the logged-in administrator.
+- NEW: one recovery switch for both parts. `/administrator?fgac=off` skips every customization for that request on the login page; for a logged-in administrator it switches the customization off for the whole session (`?fgac=on` brings it back). Nothing is saved by the switch.
+- NEW: errors in one part cannot take the other down. Every handler is isolated; a failure is logged (category `plg_system_fgadmincustom`) and the page is left as Joomla made it, so the login form always stays reachable.
+- NEW: the installer copies the settings of the two old plugins into this one, switches this plugin on and the old ones off (they are disabled, never uninstalled). Only a fresh installation does this; an update never touches saved settings. If anything fails, the installation still succeeds, nothing is disabled and a message explains how to import the settings by hand.
+- NEW: Export / Import accepts the Export JSON of both old plugins and converts it. Custom JavaScript is never imported.
+- NEW: a warning while one of the replaced plugins is still enabled - once per session for each such plugin, on any administrator page, and in this plugin's settings. Running them together is harmless but redundant (both add their CSS; the login footer is only added once by this plugin), and the recovery switch `?fgac=off` does not reach the old plugins (they have `?fgalc=off` and `?fgapc=off`).
+- CHANGE: the generator meta tag option of the old login plugin is dropped. Use FG Remove Generator (`plg_system_fgremovegenerator`) for that; the installer says so when the old setting was on and that plugin is not enabled.
+- CHANGE: all options are grouped in tabs: Brand, Administrator, Behavior, Login (logo & layout, theme preset, background, card & colors, header bar, advanced), Export / Import.
+- Verified against the old plugins: thousands of randomly generated old configurations (including invalid values and a login page that had no brand color while the administrator had one) were converted by the settings migration, and the login CSS, the modified login page and the administrator CSS of this plugin are byte-identical to the output of the old plugins (`php tests/golden.php`, development only).
+- Test suites in `tests/` (`php tests/run.php`): manifest and language consistency, helpers, plugin class with Joomla stand-ins, installer with a fake database. Development-only comparisons against the old plugins: `tests/golden.php` (identical output) and `tests/coexist.php` (old and new plugin enabled together).
