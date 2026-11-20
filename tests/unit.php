@@ -10,7 +10,7 @@ define('_JEXEC', 1);
 
 require __DIR__ . '/registry_stub.php';
 
-foreach (['Helper/ColorHelper', 'Helper/MediaUrl', 'Helper/Schema', 'Helper/StyleContext', 'Helper/LegacyMapper', 'Helper/FooterSanitizer', 'Helper/SettingsSanitizer',
+foreach (['Helper/ColorHelper', 'Helper/MediaUrl', 'Helper/Schema', 'Helper/StyleContext', 'Helper/LegacyMapper', 'Helper/ContrastCheck', 'Helper/FooterSanitizer', 'Helper/SettingsSanitizer',
     'Helper/ImportExport', 'Login/BodyModifier', 'Login/ThemePresets', 'Login/CssBuilder', 'Admin/CssBuilder', 'Admin/LogoReplacer', 'Admin/MenuScript'] as $f) {
     require __DIR__ . '/../src/' . $f . '.php';
 }
@@ -22,6 +22,7 @@ use FG\Plugin\System\AdminCustom\Helper\ColorHelper as C;
 use FG\Plugin\System\AdminCustom\Helper\FooterSanitizer as FS;
 use FG\Plugin\System\AdminCustom\Helper\ImportExport as IE;
 use FG\Plugin\System\AdminCustom\Helper\LegacyMapper as LM;
+use FG\Plugin\System\AdminCustom\Helper\ContrastCheck as CC;
 use FG\Plugin\System\AdminCustom\Helper\MediaUrl as M;
 use FG\Plugin\System\AdminCustom\Helper\SettingsSanitizer as S;
 use FG\Plugin\System\AdminCustom\Helper\StyleContext as SC;
@@ -64,6 +65,21 @@ $eq([C::contrastText('#000000'), C::contrastText('#00000020'), C::contrastText('
 $eq([C::contrastText('#8b5a2b'), C::contrastText('#8b5a2bcc')], ['#ffffff', '#000000'], 'translucent brown over white is judged lighter than the opaque one');
 $eq(round(C::contrast('#00000000', '#ffffff'), 2), 1.0, 'fully transparent equals the base');
 $eq(round(C::luminance('#ffffff80'), 4), 1.0, 'white over white');
+
+// ------------------------------------------------------------------- ContrastCheck
+$labels = static fn (array $low): array => array_column($low, 'label');
+$eq(CC::low([]), [], 'contrast: nothing set, nothing to say');
+$eq(CC::low(['login_card_text' => '#000000', 'login_card_bg' => '#ffffff']), [], 'contrast: black on white is fine');
+$eq(CC::low(['login_card_text' => '#767676', 'login_card_bg' => '#ffffff']), [], 'contrast: 4.54:1 reaches AA');
+$low = CC::low(['login_card_text' => '#777777', 'login_card_bg' => '#ffffff']);
+$eq([$labels($low), $low[0]['ratio']], [['PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CARD_TEXT_LABEL'], 4.4], 'contrast: 4.48:1 is below AA and is shown rounded down');
+$eq($labels(CC::low(['login_btn_text' => '#ffffff', 'login_btn_bg' => '#f5d000', 'login_header_text' => '#fff', 'login_header_bg' => '#eee'])), ['PLG_SYSTEM_FGADMINCUSTOM_LOGIN_BTN_TEXT_LABEL', 'PLG_SYSTEM_FGADMINCUSTOM_LOGIN_HEADER_TEXT_LABEL'], 'contrast: several pairs, in settings order');
+$eq(CC::low(['login_card_text' => '#ffffff']), [], 'contrast: a text color without a background is not judged');
+$eq(CC::low(['login_card_text' => '', 'login_card_bg' => '#ffffff']), [], 'contrast: an empty text color is picked automatically, not judged');
+$eq(CC::low(['login_card_text' => 'red', 'login_card_bg' => '#ffffff', 'login_btn_text' => ['x'], 'login_btn_bg' => '#000']), [], 'contrast: invalid values are ignored');
+$eq(CC::low(['login_card_text' => '#000000', 'login_card_bg' => '#00000010']), [], 'contrast: a translucent background is judged over white');
+$eq(\count(CC::low(['login_card_text' => '#ffffff', 'login_card_bg' => '#ffffff40'])), 1, 'contrast: white text on a faint translucent background is low');
+$eq(\count(CC::low(['login_card_text' => '#ffffff80', 'login_card_bg' => '#000000'])) , 0, 'contrast: a translucent text color is laid over the background');
 
 // ------------------------------------------------------------------- MediaUrl
 $eq(M::clean(''), '', 'media empty');

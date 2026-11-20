@@ -85,6 +85,8 @@ text color is chosen as if the color lay over white, because the plugin cannot k
 what is behind it; with a translucent background over something dark, set the text
 color yourself.
 
+**Contrast.** When the settings page opens, hand-picked text and background colors of the login page (card, button, header bar) are checked against the WCAG AA minimum of 4.5:1; a notice names the pairs below it. Colors you leave empty are not judged, the plugin chooses black or white for those.
+
 **"Forgot your login details?"** The link below the login form only points to a page
 of the Joomla documentation. It is shown by default; switch *Hide ...* on (tab
 *Login: Logo & Layout*) to hide it. Sites migrated from FG Admin Login Customizer keep
@@ -161,6 +163,8 @@ Everything except the Joomla glue runs without Joomla, in plain PHP:
 ```
 php tests/run.php
 ```
+
+The same command runs on GitHub Actions for PHP 8.1 to 8.4 (`.github/workflows/tests.yml`).
 
 `php tests/golden.php <old-login-dir> <old-page-dir>` compares the output
 against the two old plugins for random configurations, and

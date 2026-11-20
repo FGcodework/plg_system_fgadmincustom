@@ -14,7 +14,7 @@ require __DIR__ . '/registry_stub.php';
 require __DIR__ . '/joomla_stub.php';
 require __DIR__ . '/app_stub.php';
 
-foreach (['Helper/ColorHelper', 'Helper/MediaUrl', 'Helper/Schema', 'Helper/StyleContext', 'Helper/LegacyMapper', 'Helper/FooterSanitizer', 'Helper/SettingsSanitizer', 'Helper/ImportExport',
+foreach (['Helper/ColorHelper', 'Helper/MediaUrl', 'Helper/Schema', 'Helper/StyleContext', 'Helper/LegacyMapper', 'Helper/ContrastCheck', 'Helper/FooterSanitizer', 'Helper/SettingsSanitizer', 'Helper/ImportExport',
     'Login/BodyModifier', 'Login/ThemePresets', 'Login/CssBuilder', 'Admin/CssBuilder', 'Admin/LogoReplacer', 'Admin/MenuScript', 'Extension/AdminCustom'] as $f) {
     require __DIR__ . '/../src/' . $f . '.php';
 }
@@ -298,6 +298,24 @@ $app  = $formApp();
 $data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => ['login_footer_text' => 'by <a href="https://example.com/">me</a>']];
 $plugin($app, [])->prepareAdminForm($form($data));
 $eq($app->messages, [], 'form: no warning for a valid footer');
+
+// hard-to-read hand-picked colors are reported on the settings page
+$app  = $formApp();
+$data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => ['login_card_text' => '#777777', 'login_card_bg' => '#ffffff', 'login_btn_text' => '#000000', 'login_btn_bg' => '#ffffff']];
+$plugin($app, [])->prepareAdminForm($form($data));
+$eq(array_column($app->messages, 1), ['PLG_SYSTEM_FGADMINCUSTOM_CONTRAST_LOW|PLG_SYSTEM_FGADMINCUSTOM_LOGIN_CARD_TEXT_LABEL (4.4:1)'], 'form: warns about the pair below 4.5:1 only');
+$app  = $formApp();
+$data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => ['login_card_text' => '#000000', 'login_card_bg' => '#ffffff']];
+$plugin($app, [])->prepareAdminForm($form($data));
+$eq($app->messages, [], 'form: no contrast warning when the colors read well');
+$app  = $formApp();
+$data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => ['import_json' => json_encode(['_schema' => 'fgadmincustom/1', 'login_card_text' => '#eeeeee', 'login_card_bg' => '#ffffff'])]];
+$plugin($app, [])->prepareAdminForm($form($data));
+$eq(\in_array('warning', array_column($app->messages, 0), true) && str_contains(implode('|', array_column($app->messages, 1)), 'CONTRAST_LOW'), true, 'form: the colors of an import are judged as shown, too');
+$app  = $formApp();
+$data = (object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => ['login_theme_preset' => 'dark']];
+$plugin($app, [])->prepareAdminForm($form($data));
+$eq(str_contains(implode('|', array_column($app->messages, 1)), 'CONTRAST_LOW'), false, 'form: the shipped presets read well');
 
 // a pasted import beats a theme preset chosen in the same save
 $app  = $formApp();

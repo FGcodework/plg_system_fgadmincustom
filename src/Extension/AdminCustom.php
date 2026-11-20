@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.6
+ * @version     1.0.7
  * @license     GNU General Public License version 2 or later
  *
  * Visual customization of the Joomla administrator (Atum template, Joomla 5/6)
@@ -22,6 +22,7 @@ namespace FG\Plugin\System\AdminCustom\Extension;
 use FG\Plugin\System\AdminCustom\Admin\CssBuilder as AdminCssBuilder;
 use FG\Plugin\System\AdminCustom\Admin\LogoReplacer;
 use FG\Plugin\System\AdminCustom\Admin\MenuScript;
+use FG\Plugin\System\AdminCustom\Helper\ContrastCheck;
 use FG\Plugin\System\AdminCustom\Helper\FooterSanitizer;
 use FG\Plugin\System\AdminCustom\Helper\ImportExport;
 use FG\Plugin\System\AdminCustom\Helper\LegacyMapper;
@@ -47,7 +48,7 @@ use Joomla\Event\SubscriberInterface;
 final class AdminCustom extends CMSPlugin implements SubscriberInterface
 {
     /** Shown in the generated CSS comment. */
-    public const VERSION = '1.0.6';
+    public const VERSION = '1.0.7';
 
     /** Value of the "schema" marker in the settings export. */
     public const EXPORT_SCHEMA = 'fgadmincustom/1';
@@ -523,6 +524,28 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
         }
 
         ImportExport::applyValuesToData($data, $updates);
+
+        // What the form now shows: hand-picked text and background colors that are hard to read together.
+        $this->warnLowContrast($app, $updates + $params);
+    }
+
+    /**
+     * @param array<string, mixed> $shown
+     */
+    private function warnLowContrast(CMSApplicationInterface $app, array $shown): void
+    {
+        $low = ContrastCheck::low($shown);
+
+        if ($low === []) {
+            return;
+        }
+
+        $list = array_map(
+            static fn (array $pair): string => Text::_($pair['label']) . ' (' . $pair['ratio'] . ':1)',
+            $low
+        );
+
+        $app->enqueueMessage(Text::sprintf('PLG_SYSTEM_FGADMINCUSTOM_CONTRAST_LOW', implode(', ', $list)), 'warning');
     }
 
     /**

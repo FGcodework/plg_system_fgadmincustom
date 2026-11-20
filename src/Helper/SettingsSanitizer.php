@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.6
+ * @version     1.0.7
  * @license     GNU General Public License version 2 or later
  *
  * Validates settings values coming from an imported JSON, key by key.

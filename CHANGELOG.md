@@ -1,5 +1,10 @@
 # Changelog - plg_system_fgadmincustom
 
+## 1.0.7 (2026-11-20)
+- NEW: the settings page warns about hand-picked colors that are hard to read together: card text on card background, button text on button background, header text on header background, each below the WCAG AA contrast of 4.5:1 (new string `CONTRAST_LOW`, new class `ContrastCheck`). It judges what the form shows, so the colors of a pasted import or a chosen preset are included; the shipped presets all pass. Empty colors (chosen automatically) and translucent colors (laid over white, as for the automatic text color) are handled.
+- NEW: GitHub Actions workflow running the test suites on PHP 8.1 to 8.4.
+- Tests: contrast pairs, rounding, invalid and translucent values, the warning on the form.
+
 ## 1.0.6 (2026-11-20)
 - FIX: when the login logo falls back to the login box, a file name containing `$1`, `$0` or a backslash is inserted literally (the fallback used a replacement string; the footer and the header logos already were safe).
 - FIX: the header logos of the administrator are found by the Atum markup (the images inside the element with the class `logo` of `<header id="header">`), not by the word "logo" anywhere in the tag. A custom Atum logo whose file name does not contain "logo" is replaced as well, and `alt`/`title` texts, an avatar or an icon are never touched. The fallback to "the first two images of any header" is gone.
