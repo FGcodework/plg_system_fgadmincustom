@@ -1,5 +1,10 @@
 # Changelog - plg_system_fgadmincustom
 
+## 1.0.8 (2026-11-21)
+- SECURITY: the login page's Custom CSS and Custom JavaScript can only be changed by a Super User (global `core.admin`). Joomla's Administrator group may edit plugins by default, so until now an Administrator could save a script that runs on the login page and in the head of every administrator page - a way to act as a Super User. For everybody else the two fields are read-only, and the plugin handles `onExtensionBeforeSave` (new class `CustomCodeGuard`): whatever the posted form says, the stored code is kept, a change is reported, and if the stored values cannot be read the save is refused rather than letting the code through. Other settings stay editable for Administrators. New strings `CUSTOM_CODE_SUPER_ONLY`, `CUSTOM_CODE_REVERTED`, `CUSTOM_CODE_CHECK_FAILED`; the field descriptions say who can change the field.
+- README: who can change the custom code, and that the Plugins permission remains the way to keep people out of the plugin entirely.
+- Tests: the guard (changed, removed, omitted, added, CRLF, unreadable params), the read-only fields, the save event for a Super User, an Administrator, another plugin and another context, the fail-closed path. Checked in a real Joomla 5.4 with a Super User and an Administrator: ordinary settings save, a hand-made POST with new, empty or missing code leaves the stored code alone, and the same POST changes the code on 1.0.7.
+
 ## 1.0.7 (2026-11-20)
 - NEW: the settings page warns about hand-picked colors that are hard to read together: card text on card background, button text on button background, header text on header background, each below the WCAG AA contrast of 4.5:1 (new string `CONTRAST_LOW`, new class `ContrastCheck`). It judges what the form shows, so the colors of a pasted import or a chosen preset are included; the shipped presets all pass. Empty colors (chosen automatically) and translucent colors (laid over white, as for the automatic text color) are handled.
 - NEW: GitHub Actions workflow running the test suites on PHP 8.1 to 8.4.

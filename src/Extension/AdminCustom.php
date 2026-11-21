@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.7
+ * @version     1.0.8
  * @license     GNU General Public License version 2 or later
  *
  * Visual customization of the Joomla administrator (Atum template, Joomla 5/6)
@@ -23,6 +23,7 @@ use FG\Plugin\System\AdminCustom\Admin\CssBuilder as AdminCssBuilder;
 use FG\Plugin\System\AdminCustom\Admin\LogoReplacer;
 use FG\Plugin\System\AdminCustom\Admin\MenuScript;
 use FG\Plugin\System\AdminCustom\Helper\ContrastCheck;
+use FG\Plugin\System\AdminCustom\Helper\CustomCodeGuard;
 use FG\Plugin\System\AdminCustom\Helper\FooterSanitizer;
 use FG\Plugin\System\AdminCustom\Helper\ImportExport;
 use FG\Plugin\System\AdminCustom\Helper\LegacyMapper;
@@ -35,11 +36,14 @@ use FG\Plugin\System\AdminCustom\Login\CssBuilder as LoginCssBuilder;
 use FG\Plugin\System\AdminCustom\Login\ThemePresets;
 use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\Document\HtmlDocument;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\Database\DatabaseInterface;
+use Joomla\Database\ParameterType;
 use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
 
@@ -48,7 +52,7 @@ use Joomla\Event\SubscriberInterface;
 final class AdminCustom extends CMSPlugin implements SubscriberInterface
 {
     /** Shown in the generated CSS comment. */
-    public const VERSION = '1.0.7';
+    public const VERSION = '1.0.8';
 
     /** Value of the "schema" marker in the settings export. */
     public const EXPORT_SCHEMA = 'fgadmincustom/1';
@@ -81,6 +85,7 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
             'onBeforeCompileHead'  => 'injectAssets',
             'onAfterRender'        => 'modifyBody',
             'onContentPrepareForm' => 'prepareAdminForm',
+            'onExtensionBeforeSave' => 'guardCustomCode',
         ];
     }
 
@@ -422,8 +427,10 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
      * on the Form object. Writing onto `$data` (mutated in place, shape
      * preserved) is the reliable way to influence what is displayed.
      *
-     * Deliberately does NOT use onExtensionBeforeSave: that event has a long
-     * history of not firing reliably for plugin saves.
+     * Export, import and presets deliberately do not depend on a save event (the
+     * login plugin's history says such events were unreliable). Only the custom code
+     * limit does, see guardCustomCode(); the form is the first layer of that limit
+     * (read-only fields) and the save event the second.
      *
      * A literal script tag in a field description would corrupt this form
      * (it broke the Save toolbar once, see the login plugin's history), so
@@ -468,6 +475,15 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
         // administrator do nothing, and the plugin stays silent - so say it here.
         if ($this->adminTemplate($app) === null) {
             $app->enqueueMessage(Text::_('PLG_SYSTEM_FGADMINCUSTOM_NOT_ATUM'), 'notice');
+        }
+
+        // Custom CSS and JavaScript: Super Users only (see CustomCodeGuard).
+        if (!$this->canEditCustomCode($app)) {
+            foreach (CustomCodeGuard::KEYS as $key) {
+                $form->setFieldAttribute($key, 'readonly', 'true', 'params');
+            }
+
+            $app->enqueueMessage(Text::_('PLG_SYSTEM_FGADMINCUSTOM_CUSTOM_CODE_SUPER_ONLY'), 'notice');
         }
 
         $paramsData = $isDataArray ? ($data['params'] ?? null) : ($data->params ?? null);
@@ -527,6 +543,86 @@ final class AdminCustom extends CMSPlugin implements SubscriberInterface
 
         // What the form now shows: hand-picked text and background colors that are hard to read together.
         $this->warnLowContrast($app, $updates + $params);
+    }
+
+    /**
+     * Joomla fires onExtensionBeforeSave from the plugin model after the posted
+     * values are bound to the plugin row and before the row is stored. Whoever is
+     * not a Super User cannot change the custom CSS and JavaScript: their values
+     * are replaced with the stored ones, whatever the posted form said (a crafted
+     * request included). If that cannot be done the save is refused - the custom
+     * code never passes through unchecked.
+     */
+    public function guardCustomCode(Event $event): void
+    {
+        $table = null;
+
+        try {
+            $context = (string) $event->getArgument('context');
+            $table   = $event->getArgument('subject');
+
+            if ($context !== 'com_plugins.plugin' || !\is_object($table)
+                || ($table->element ?? '') !== 'fgadmincustom' || ($table->folder ?? '') !== 'system') {
+                return;
+            }
+
+            $app = $this->getApplication();
+
+            if ($this->canEditCustomCode($app)) {
+                return;
+            }
+
+            $new = $table->params ?? '';
+            $new = \is_string($new) ? $new : (string) json_encode($new);
+
+            [$params, $reverted] = CustomCodeGuard::restore($new, $this->storedParams((int) ($table->extension_id ?? 0)));
+
+            $table->params = $params;
+
+            if ($reverted) {
+                $app->enqueueMessage(Text::_('PLG_SYSTEM_FGADMINCUSTOM_CUSTOM_CODE_REVERTED'), 'warning');
+            }
+        } catch (\Throwable $e) {
+            $this->fail($e);
+
+            // Fail closed: without the stored values the custom code cannot be kept safe.
+            if (\is_object($table) && method_exists($table, 'setError')) {
+                $table->setError(Text::_('PLG_SYSTEM_FGADMINCUSTOM_CUSTOM_CODE_CHECK_FAILED'));
+            }
+
+            if (method_exists($event, 'addResult')) {
+                $event->addResult(false);
+            }
+        }
+    }
+
+    /**
+     * Only users with the global "core.admin" right (Super Users) may change custom code.
+     */
+    private function canEditCustomCode(CMSApplicationInterface $app): bool
+    {
+        $user = $app->getIdentity();
+
+        return $user !== null && $user->authorise('core.admin') === true;
+    }
+
+    /**
+     * The params of this plugin as they are stored now.
+     */
+    private function storedParams(int $extensionId): string
+    {
+        if ($extensionId < 1) {
+            return '{}';
+        }
+
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('params'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('extension_id') . ' = :id')
+            ->bind(':id', $extensionId, ParameterType::INTEGER);
+
+        return (string) $db->setQuery($query)->loadResult();
     }
 
     /**

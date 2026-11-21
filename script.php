@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.7
+ * @version     1.0.8
  * @license     GNU General Public License version 2 or later
  *
  * Install script. On a fresh installation it takes over the settings of the

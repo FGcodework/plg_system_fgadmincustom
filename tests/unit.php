@@ -10,7 +10,7 @@ define('_JEXEC', 1);
 
 require __DIR__ . '/registry_stub.php';
 
-foreach (['Helper/ColorHelper', 'Helper/MediaUrl', 'Helper/Schema', 'Helper/StyleContext', 'Helper/LegacyMapper', 'Helper/ContrastCheck', 'Helper/FooterSanitizer', 'Helper/SettingsSanitizer',
+foreach (['Helper/ColorHelper', 'Helper/MediaUrl', 'Helper/Schema', 'Helper/StyleContext', 'Helper/LegacyMapper', 'Helper/ContrastCheck', 'Helper/CustomCodeGuard', 'Helper/FooterSanitizer', 'Helper/SettingsSanitizer',
     'Helper/ImportExport', 'Login/BodyModifier', 'Login/ThemePresets', 'Login/CssBuilder', 'Admin/CssBuilder', 'Admin/LogoReplacer', 'Admin/MenuScript'] as $f) {
     require __DIR__ . '/../src/' . $f . '.php';
 }
@@ -23,6 +23,7 @@ use FG\Plugin\System\AdminCustom\Helper\FooterSanitizer as FS;
 use FG\Plugin\System\AdminCustom\Helper\ImportExport as IE;
 use FG\Plugin\System\AdminCustom\Helper\LegacyMapper as LM;
 use FG\Plugin\System\AdminCustom\Helper\ContrastCheck as CC;
+use FG\Plugin\System\AdminCustom\Helper\CustomCodeGuard as CG;
 use FG\Plugin\System\AdminCustom\Helper\MediaUrl as M;
 use FG\Plugin\System\AdminCustom\Helper\SettingsSanitizer as S;
 use FG\Plugin\System\AdminCustom\Helper\StyleContext as SC;
@@ -386,6 +387,29 @@ $eq(str_contains((new AdminCss(SC::admin(new Registry(['ctrl_radius' => '99'])))
 $eq(str_contains((new AdminCss(SC::admin(new Registry(['admin_logo_height' => '500']))))->build(), 'height: 120px'), true, 'admin css logo height clamped');
 $js = MenuScript::build();
 $eq(str_contains($js, 'fgapcMenuOpenFirst') && !str_contains($js, '<script'), true, 'menu script shape (guard shared with FG Admin Page Customizer)');
+
+// ------------------------------------------------------------------- CustomCodeGuard
+$st = json_encode(['a' => '1', 'login_custom_js' => 'old()', 'login_custom_css' => 'p{q:r}']);
+[$json, $rev] = CG::restore(json_encode(['a' => '2', 'login_custom_js' => 'new()', 'login_custom_css' => 'p{q:r}']), $st);
+$eq([json_decode($json, true), $rev], [['a' => '2', 'login_custom_js' => 'old()', 'login_custom_css' => 'p{q:r}'], true], 'guard: changed code is put back, other settings stay');
+[$json, $rev] = CG::restore($st, $st);
+$eq([json_decode($json, true) === json_decode($st, true), $rev], [true, false], 'guard: unchanged code is no change');
+[$json, $rev] = CG::restore(json_encode(['a' => '2']), $st);
+$eq([json_decode($json, true)['login_custom_js'], $rev], ['old()', true], 'guard: removed code is put back');
+[$json, $rev] = CG::restore(json_encode(['a' => '2', 'login_custom_js' => 'x()']), json_encode(['a' => '1']));
+$eq([json_decode($json, true), $rev], [['a' => '2'], true], 'guard: code added where there was none is dropped');
+[$json, $rev] = CG::restore(json_encode(['a' => '2', 'login_custom_js' => '']), json_encode(['a' => '1']));
+$eq([json_decode($json, true), $rev], [['a' => '2'], false], 'guard: an empty field where there was none is no change');
+[$json, $rev] = CG::restore(json_encode(['login_custom_js' => "a\r\nb"]), json_encode(['login_custom_js' => "a\nb"]));
+$eq([json_decode($json, true), $rev], [['login_custom_js' => "a\nb"], false], 'guard: line breaks of a browser are no change (and the stored text is kept)');
+[$json, $rev] = CG::restore('not json', $st);
+$eq([json_decode($json, true), $rev], [['login_custom_css' => 'p{q:r}', 'login_custom_js' => 'old()'], true], 'guard: unreadable posted params still end with the stored code only');
+[$json, $rev] = CG::restore('{"a":"1"}', 'garbage');
+$eq([$json, $rev], ['{"a":"1"}', false], 'guard: unreadable stored params leave the rest alone');
+[$json, $rev] = CG::restore('{}', '{}');
+$eq([$json, $rev], ['{}', false], 'guard: nothing to do stays an object');
+$eq(CG::KEYS, ['login_custom_css', 'login_custom_js'], 'guard: guards the two code settings');
+$eq(array_diff(CG::KEYS, \FG\Plugin\System\AdminCustom\Helper\Schema::NOT_IMPORTABLE), [], 'guard: the guarded keys are exactly the non-importable ones (prefixed names)');
 
 echo $fail === 0 ? "OK: $n unit assertions passed\n" : "$fail of $n FAILED\n";
 exit($fail === 0 ? 0 : 1);

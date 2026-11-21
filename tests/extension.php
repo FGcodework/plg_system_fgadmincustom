@@ -13,8 +13,9 @@ define('_JEXEC', 1);
 require __DIR__ . '/registry_stub.php';
 require __DIR__ . '/joomla_stub.php';
 require __DIR__ . '/app_stub.php';
+require __DIR__ . '/guard_stub.php';
 
-foreach (['Helper/ColorHelper', 'Helper/MediaUrl', 'Helper/Schema', 'Helper/StyleContext', 'Helper/LegacyMapper', 'Helper/ContrastCheck', 'Helper/FooterSanitizer', 'Helper/SettingsSanitizer', 'Helper/ImportExport',
+foreach (['Helper/ColorHelper', 'Helper/MediaUrl', 'Helper/Schema', 'Helper/StyleContext', 'Helper/LegacyMapper', 'Helper/ContrastCheck', 'Helper/CustomCodeGuard', 'Helper/FooterSanitizer', 'Helper/SettingsSanitizer', 'Helper/ImportExport',
     'Login/BodyModifier', 'Login/ThemePresets', 'Login/CssBuilder', 'Admin/CssBuilder', 'Admin/LogoReplacer', 'Admin/MenuScript', 'Extension/AdminCustom'] as $f) {
     require __DIR__ . '/../src/' . $f . '.php';
 }
@@ -61,7 +62,7 @@ $adminHtml = '<header id="header"><div class="logo"><img src="a.svg" class="logo
 $params    = ['brand_color' => '#8b5a2b', 'login_logo' => 'images/login.png', 'admin_logo' => 'images/admin.png', 'admin_menu_open_first' => '1'];
 
 // --------------------------------------------------------------- subscriptions
-$eq(array_keys(AdminCustom::getSubscribedEvents()), ['onAfterDispatch', 'onBeforeCompileHead', 'onAfterRender', 'onContentPrepareForm'], 'subscribed events');
+$eq(array_keys(AdminCustom::getSubscribedEvents()), ['onAfterDispatch', 'onBeforeCompileHead', 'onAfterRender', 'onContentPrepareForm', 'onExtensionBeforeSave'], 'subscribed events');
 
 // ---------------------------------------------------------------- login page
 $app = new FakeApp('administrator', true, ['option' => 'com_login'], 'atum', $loginHtml);
@@ -392,6 +393,111 @@ try {
 }
 
 $eq($thrown, null, 'form: an unexpected data shape never breaks the page');
+
+// ------------------------------------------- custom CSS / JS: Super Users only
+use Joomla\Database\FakeParamsDb;
+
+$msgTypes = static fn (FakeApp $a): array => array_map(static fn (array $m): string => $m[0] . ':' . $m[1], $a->messages);
+$saveEvent = static function (object $table, string $context = 'com_plugins.plugin'): Event {
+    return new Event('onExtensionBeforeSave', ['context' => $context, 'subject' => $table, 'isNew' => false, 'data' => []]);
+};
+$row = static fn (string $params): object => new class ($params) {
+    public string $element = 'fgadmincustom';
+    public string $folder  = 'system';
+    public int $extension_id = 77;
+    public string $error = '';
+
+    public function __construct(public string $params)
+    {
+    }
+
+    public function setError(string $e): void
+    {
+        $this->error = $e;
+    }
+};
+$stored = json_encode(['brand_color' => '#111111', 'login_custom_js' => 'safe()', 'login_custom_css' => 'a{b:c}']);
+
+// the form: a Super User edits, anybody else sees read-only fields and a notice
+$app = $formApp();
+$f   = $form((object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => []]);
+$plugin($app, [])->prepareAdminForm($f);
+$eq([$f->getArgument('form')->attributes, array_filter($msgTypes($app), static fn (string $m): bool => str_contains($m, 'CUSTOM_CODE'))], [[], []], 'custom code: a Super User gets editable fields and no notice');
+
+$app = $formApp();
+$app->superUser = false;
+$f = $form((object) ['element' => 'fgadmincustom', 'folder' => 'system', 'params' => []]);
+$plugin($app, [])->prepareAdminForm($f);
+$eq($f->getArgument('form')->attributes, ['params.login_custom_css.readonly' => 'true', 'params.login_custom_js.readonly' => 'true'], 'custom code: another administrator gets both fields read-only');
+$eq(in_array('notice:PLG_SYSTEM_FGADMINCUSTOM_CUSTOM_CODE_SUPER_ONLY', $msgTypes($app), true), true, 'custom code: ... and a notice');
+
+// the save: a Super User's values pass untouched
+$app = $formApp();
+FakeParamsDb::$params = $stored;
+FakeParamsDb::$queries = 0;
+$mine = json_encode(['brand_color' => '#222222', 'login_custom_js' => 'mine()']);
+$t = $row($mine);
+$plugin($app, [])->guardCustomCode($saveEvent($t));
+$eq([$t->params, FakeParamsDb::$queries, $app->messages], [$mine, 0, []], 'custom code save: a Super User keeps what was posted (and the database is not even asked)');
+
+// ... another administrator's changes of the code are undone, the rest is kept
+$app = $formApp();
+$app->superUser = false;
+$evil = json_encode(['brand_color' => '#222222', 'login_custom_js' => 'steal()', 'login_custom_css' => 'x{y:z}']);
+$t  = $row($evil);
+$ev = $saveEvent($t);
+$plugin($app, [])->guardCustomCode($ev);
+$after = json_decode($t->params, true);
+$eq([$after['brand_color'], $after['login_custom_js'], $after['login_custom_css'], $ev->results, $t->error], ['#222222', 'safe()', 'a{b:c}', [], ''], 'custom code save: posted code replaced by the stored one, other settings kept');
+$eq($msgTypes($app), ['warning:PLG_SYSTEM_FGADMINCUSTOM_CUSTOM_CODE_REVERTED'], 'custom code save: the user is told');
+
+// ... a request that leaves the fields out cannot delete the code either
+$app = $formApp();
+$app->superUser = false;
+$t = $row(json_encode(['brand_color' => '#333333']));
+$plugin($app, [])->guardCustomCode($saveEvent($t));
+$after = json_decode($t->params, true);
+$eq([$after['login_custom_js'] ?? null, $after['login_custom_css'] ?? null], ['safe()', 'a{b:c}'], 'custom code save: omitting the fields does not delete the code');
+
+// ... the unchanged read-only fields (browsers send CRLF) cause no warning
+$app = $formApp();
+$app->superUser = false;
+FakeParamsDb::$params = json_encode(['login_custom_js' => "a();\nb();"]);
+$t = $row(json_encode(['login_custom_js' => "a();\r\nb();"]));
+$plugin($app, [])->guardCustomCode($saveEvent($t));
+$eq([json_decode($t->params, true)['login_custom_js'], $app->messages], ["a();\nb();", []], 'custom code save: a read-only field posted back with CRLF is not a change');
+
+// ... other plugins and other contexts are not touched
+$app = $formApp();
+$app->superUser = false;
+$other = $row($evil);
+$other->element = 'somethingelse';
+$plugin($app, [])->guardCustomCode($saveEvent($other));
+$eq($other->params, $evil, 'custom code save: another plugin is left alone');
+$t = $row($evil);
+$plugin($app, [])->guardCustomCode($saveEvent($t, 'com_content.article'));
+$eq($t->params, $evil, 'custom code save: another context is left alone');
+
+// ... if the stored values cannot be read, the save is refused instead of letting the code through
+$app = $formApp();
+$app->superUser = false;
+FakeParamsDb::$broken = true;
+Log::$entries = [];
+$t  = $row($evil);
+$ev = $saveEvent($t);
+$plugin($app, [])->guardCustomCode($ev);
+FakeParamsDb::$broken = false;
+$eq([$ev->results, $t->error, count(Log::$entries) >= 1], [[false], 'PLG_SYSTEM_FGADMINCUSTOM_CUSTOM_CODE_CHECK_FAILED', true], 'custom code save: the check fails closed (save refused, logged)');
+Log::$entries = [];
+
+// ... a guest has no identity rights at all
+FakeParamsDb::$params = $stored;
+$app = $formApp();
+$app->guest     = true;
+$app->superUser = false;
+$t = $row($evil);
+$plugin($app, [])->guardCustomCode($saveEvent($t));
+$eq(json_decode($t->params, true)['login_custom_js'], 'safe()', 'custom code save: a user without the right is restricted whoever they are');
 
 echo $fail === 0 ? "OK: $n extension assertions passed\n" : "$fail of $n FAILED\n";
 exit($fail === 0 ? 0 : 1);

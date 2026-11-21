@@ -24,6 +24,9 @@ class FakeApp implements CMSApplicationInterface
 {
     public array $messages = [];
 
+    /** Does the user hold the global core.admin right (a Super User)? */
+    public bool $superUser = true;
+
     /** Joomla renders the message area before the page head: a message queued after that is lost. */
     public bool $messagesRendered = false;
     public array $state    = [];
@@ -41,7 +44,18 @@ class FakeApp implements CMSApplicationInterface
 
     public function getIdentity(): object
     {
-        return (object) ['guest' => $this->guest ? 1 : 0];
+        $super = $this->superUser;
+
+        return new class ($this->guest ? 1 : 0, $super) {
+            public function __construct(public int $guest, private bool $super)
+            {
+            }
+
+            public function authorise(string $action, $asset = null): bool
+            {
+                return $action === 'core.admin' && $asset === null && $this->super;
+            }
+        };
     }
 
     public function getInput(): FakeInput

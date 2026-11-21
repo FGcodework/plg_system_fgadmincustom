@@ -75,7 +75,7 @@ one. If you do, nothing breaks (both add their styles, which look the same after
 | **Login: Background** | Type, colors, gradient angle, image overlay. |
 | **Login: Card & colors** | "Use Brand settings", the login page's own overrides of the Brand values, card and button colors, link color. |
 | **Login: Header bar** | Header colors, language switcher, frontend-link button. |
-| **Login: Advanced** | Custom CSS and JavaScript (see the note below). |
+| **Login: Advanced** | Custom CSS and JavaScript, Super Users only (see the note below). |
 | **Export / Import** | Read-only JSON export; paste JSON + Save to import. Custom JavaScript and Custom CSS are never imported. |
 
 Every color field left empty falls back to the Atum template's own styling.
@@ -118,7 +118,7 @@ logged-in administrator.
 
 The Custom JavaScript is printed in the page head (an inline script cannot be deferred), so it runs before the login form exists: wrap code that touches the page in a `DOMContentLoaded` listener.
 
-Anyone who may edit plugins (Joomla permission *Edit* for Plugins) can type code into these fields that runs on the login page, next to the password input. Keep that permission to people you would trust with a template file; Joomla's Administrator group has it by default, so restrict it under *Users - Permissions* if that is not what you want.
+Only a **Super User** (the global *Configuration* right `core.admin`) can change these two fields. Joomla's Administrator group may edit plugins by default, and code typed into these fields runs on the login page, next to the password input, so for everybody else the fields are read-only and a save of the settings keeps the stored code whatever the posted form says (a hand-made request included). The other settings stay editable for them, and they are told when a change of the code was ignored. The save check runs while the plugin is enabled; to keep people out of the plugin altogether, take the *Edit* right for Plugins away from them under *Users - Permissions*.
 
 The **Custom JavaScript** field runs on the administrator login page - the
 page that carries the username and password inputs. Treat it like editing a

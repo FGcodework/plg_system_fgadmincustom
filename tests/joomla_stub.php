@@ -21,6 +21,15 @@ namespace Joomla\Event {
         {
             return $this->args[$name] ?? $default;
         }
+
+        public array $results = [];
+
+        public function addResult($data): static
+        {
+            $this->results[] = $data;
+
+            return $this;
+        }
     }
 }
 
@@ -86,6 +95,16 @@ namespace Joomla\CMS\Form {
         public function getName(): string
         {
             return $this->name;
+        }
+
+        /** @var array<string, string> field attributes set through setFieldAttribute(), "group.field.attribute" => value */
+        public array $attributes = [];
+
+        public function setFieldAttribute(string $name, string $attribute, $value, ?string $group = null): bool
+        {
+            $this->attributes[($group !== null ? $group . '.' : '') . $name . '.' . $attribute] = (string) $value;
+
+            return true;
         }
     }
 }
