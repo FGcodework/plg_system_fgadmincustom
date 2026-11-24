@@ -411,5 +411,19 @@ $eq([$json, $rev], ['{}', false], 'guard: nothing to do stays an object');
 $eq(CG::KEYS, ['login_custom_css', 'login_custom_js'], 'guard: guards the two code settings');
 $eq(array_diff(CG::KEYS, \FG\Plugin\System\AdminCustom\Helper\Schema::NOT_IMPORTABLE), [], 'guard: the guarded keys are exactly the non-importable ones (prefixed names)');
 
+// ---------------------------------------------- footer: control characters (no hex ranges in the source: scanners flag them)
+$fs = static fn (string $h): ?string => \FG\Plugin\System\AdminCustom\Helper\FooterSanitizer::sanitize($h);
+$eq($fs("<span title=\"a\tb\">x</span>") !== null, true, 'footer title: a tab is fine');
+$eq($fs("<span title=\"a\nb\">x</span>") !== null, true, 'footer title: a line feed is fine');
+$eq($fs('<span title="Ľščťž – ok">x</span>') !== null, true, 'footer title: accented text is fine');
+foreach (["\x01", "\x0b", "\x0c", "\x1f", "\x7f"] as $ch) {
+    $eq($fs("<span title=\"a{$ch}b\">x</span>"), null, 'footer title: control character 0x' . bin2hex($ch) . ' refused');
+    $eq($fs("<a href=\"https://x.sk/a{$ch}b\">x</a>"), null, 'footer link: control character 0x' . bin2hex($ch) . ' refused');
+}
+$eq($fs('<a href="https://x.sk/a b">x</a>'), null, 'footer link: a space refused');
+$eq($fs('<a href="https://x.sk/a\\b">x</a>'), null, 'footer link: a backslash refused');
+$eq($fs('<a href="https://x.sk/čšž">x</a>') !== null, true, 'footer link: UTF-8 path accepted');
+$eq($fs("<a href=\"https://x.sk/a\xc2\x85b\">x</a>"), null, 'footer link: a C1 control character (U+0085) refused');
+
 echo $fail === 0 ? "OK: $n unit assertions passed\n" : "$fail of $n FAILED\n";
 exit($fail === 0 ? 0 : 1);

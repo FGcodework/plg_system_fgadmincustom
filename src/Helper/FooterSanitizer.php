@@ -2,7 +2,7 @@
 
 /**
  * @package     plg_system_fgadmincustom
- * @version     1.0.8
+ * @version     1.0.9
  * @license     GNU General Public License version 2 or later
  */
 
@@ -232,7 +232,8 @@ final class FooterSanitizer
 
             case 'alt':
             case 'title':
-                return \strlen($value) <= 300 && preg_match('/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/', $value) !== 1 ? $value : null;
+                // Control characters other than tab, line feed and carriage return are refused; text that is not valid UTF-8 as well.
+                return \strlen($value) <= 300 && preg_match('/(?![\t\n\r])\p{Cc}/u', $value) === 0 ? $value : null;
         }
 
         return null;
@@ -249,7 +250,7 @@ final class FooterSanitizer
     {
         $value = trim($value, ' ');
 
-        if ($value === '' || \strlen($value) > 500 || preg_match('/[\x00-\x20\x7f-\x9f\\\\]/u', $value) === 1) {
+        if ($value === '' || \strlen($value) > 500 || preg_match('/[\p{Cc} \\\\]/u', $value) !== 0) {
             return null;
         }
 

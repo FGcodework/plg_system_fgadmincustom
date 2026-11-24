@@ -1,5 +1,9 @@
 # Changelog - plg_system_fgadmincustom
 
+## 1.0.9 (2026-11-24)
+- FIX: no hexadecimal character ranges next to each other in the code any more (`\x1f\x7f`): the JED checker (JAMSS pattern 21, "two characters in hexadecimal or octal notation") flags them as possible obfuscation. The footer's control-character checks in `FooterSanitizer` now use `\p{Cc}`; the result is the same on every footer tried (the same 4739 of 20000 fuzzed footers are accepted, and the 12 hand-picked cases give the same output as 1.0.8). Not valid UTF-8 in a title or a link is now refused explicitly.
+- Tests: control characters, tab and line feed, spaces, backslash and a C1 control character in a footer title and link.
+
 ## 1.0.8 (2026-11-21)
 - SECURITY: the login page's Custom CSS and Custom JavaScript can only be changed by a Super User (global `core.admin`). Joomla's Administrator group may edit plugins by default, so until now an Administrator could save a script that runs on the login page and in the head of every administrator page - a way to act as a Super User. For everybody else the two fields are read-only, and the plugin handles `onExtensionBeforeSave` (new class `CustomCodeGuard`): whatever the posted form says, the stored code is kept, a change is reported, and if the stored values cannot be read the save is refused rather than letting the code through. Other settings stay editable for Administrators. New strings `CUSTOM_CODE_SUPER_ONLY`, `CUSTOM_CODE_REVERTED`, `CUSTOM_CODE_CHECK_FAILED`; the field descriptions say who can change the field.
 - README: who can change the custom code, and that the Plugins permission remains the way to keep people out of the plugin entirely.

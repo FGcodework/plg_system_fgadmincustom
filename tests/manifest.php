@@ -127,7 +127,7 @@ foreach ($names as $name => $field) {
     }
 }
 
-$ok((string) $xml->version === '1.0.8', 'version 1.0.8');
+$ok((string) $xml->version === '1.0.9', 'version 1.0.9');
 $ok((string) $xml->scriptfile === 'script.php' && is_file($root . '/script.php'), 'script file present');
 
 // Every number range in the form is the range the schema validates an import with, and the one the
